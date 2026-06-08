@@ -1,0 +1,6 @@
+# Face Physiognomy Project — Python Dependencies
+# Install with:  pip install -r requirements.txt
+
+mediapipe>=0.10.0
+opencv-python>=4.8.0
+numpy>=1.24.0

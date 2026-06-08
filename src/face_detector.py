@@ -25,7 +25,8 @@ import numpy as np
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Tuple
-
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 
 # ─────────────────────────────────────────────
 #  Enums & Data Classes
@@ -158,7 +159,8 @@ class Landmarks:
 
 class FaceDetectorValidator:
     """
-    Full face detection + validation pipeline.
+    Full face detection + validation pipeline using MediaPipe Tasks API.
+    [REFACTORED FOR MEDIAPIPE TASKS API - to be PYTHON 3.12 COMPATIBLE]
 
     Usage:
         detector = FaceDetectorValidator()
@@ -176,7 +178,22 @@ class FaceDetectorValidator:
 
     def _init_mediapipe(self):
         """Initialize MediaPipe models (loaded once, reused for every image)."""
-
+      model_filename = "face_landmarker.task"
+      if not os.path.exists(model_filename):
+            print("Downloading face_landmarker.task topology map...")
+            model_url = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
+            urllib.request.urlretrieve(model_url, model_filename)
+      base_options = python.BaseOptions(model_asset_path=model_filename)
+      options = vision.FaceLandmarkerOptions(
+            base_options=base_options,
+            running_mode=vision.RunningMode.IMAGE,
+            num_faces=2, # to check if more than 2 faces --> Reject
+            min_face_detection_confidence=self.config.DETECTION_CONFIDENCE,
+            min_face_presence_confidence=self.config.MESH_DETECTION_CONF
+        )
+      self.landmarker = vision.FaceLandmarker.create_from_options(options)
+      print(" MediaPipe FaceLandmarker Task Engine fully initialized.")
+       """
         # ── Face Detection ─────────────────────────────────────────
         # model_selection=1 → long-range model (up to 5 m), better for portraits
         # model_selection=0 → short-range (within 2 m), faster
@@ -199,7 +216,7 @@ class FaceDetectorValidator:
 
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
-
+       """
     # ──────────────────────────────────────────────────────────────
     #  Public API
     # ──────────────────────────────────────────────────────────────
@@ -220,66 +237,55 @@ class FaceDetectorValidator:
             return self._fail(ValidationStatus.IMAGE_TOO_SMALL,
                               "Could not load image — check the file path.")
 
-        # Step 2: Convert to RGB (MediaPipe expects RGB)
-        image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
         h, w = image_bgr.shape[:2]
-
+      # Step 2: Convert to RGB (MediaPipe expects RGB)
+        if isinstance(image_input, str):
+          mp_image = mp.Image.create_from_file(image_input)
+        else:
+          mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB))
+          
         # Step 3: Detect faces
-        detection_result = self._detect_faces(image_rgb)
-        if not detection_result["valid"]:
-            return self._fail(detection_result["status"],
-                              detection_result["message"])
+        detection_result = self.landmarker.detect(mp_image)
+        if not detection_result.face_landmarks:
+            return self._fail(ValidationStatus.NO_FACE_DETECTED, "No human face detected.")
+            
+        num_detected_faces = len(detection_result.face_landmarks)
+        if num_detected_faces > 1:
+            return self._fail(ValidationStatus.MULTIPLE_FACES, 
+                              f"{num_detected_faces} faces detected. Exactly one face required.")
+        
+        # Step 4: Getting bounding box from landmarkes 
+        landmarks = detection_result.face_landmarks[0]
+        x_coords = [int(lm.x * w) for lm in landmarks]
+        y_coords = [int(lm.y * h) for lm in landmarks]
+        x, y = min(x_coords), min(y_coords)
+        bw, bh = max(x_coords) - x, max(y_coords) - y
+        bbox = (x, y, bw, bh)
 
-        bbox         = detection_result["bbox"]          # (x, y, bw, bh)
-        confidence   = detection_result["confidence"]
+        confidence   = 1.0
 
-        # Step 4: Check minimum face size
-        _, _, fw, fh = bbox
-        if fw < self.config.MIN_FACE_SIZE_PX or fh < self.config.MIN_FACE_SIZE_PX:
-            return self._fail(
+        # Step 5: Check minimum face size
+        if bw < self.config.MIN_FACE_SIZE_PX or bh < self.config.MIN_FACE_SIZE_PX:
+          return self._fail(
                 ValidationStatus.IMAGE_TOO_SMALL,
-                f"Face region too small ({fw}×{fh} px). "
-                f"Minimum: {self.config.MIN_FACE_SIZE_PX} px."
+                f"Face region too small ({bw}×{bh} px). Minimum required: {self.config.MIN_FACE_SIZE_PX} px."
             )
-
-        # Step 5: Get 468 face mesh landmarks for expression analysis
-        mesh_result = self.face_mesh.process(image_rgb)
-        if not mesh_result.multi_face_landmarks:
-            # Detection succeeded but mesh failed → borderline case
-            # We still accept it but skip expression check
-            face_crop      = self._crop_face(image_bgr, bbox)
-            annotated      = self._draw_detection(image_bgr.copy(), bbox, confidence)
-            return FaceValidationResult(
-                status=ValidationStatus.VALID,
-                is_valid=True,
-                message="Face detected. Expression check skipped (no mesh).",
-                face_crop=face_crop,
-                face_bbox=bbox,
-                detection_score=confidence,
-                annotated_image=annotated
-            )
-
-        landmarks = mesh_result.multi_face_landmarks[0].landmark
-
-        # Step 6: Expression check
+          
+        # Step 6: Geometric Expression Analysis Check
         expr_result = self._check_expression(landmarks, w, h)
         if expr_result["has_expression"]:
-            return self._fail(
+          return self._fail(
                 ValidationStatus.EXPRESSION_DETECTED,
-                f"Expression detected: {expr_result['reason']}. "
-                "Please use a neutral, relaxed face.",
+                f"Expression rejected: {expr_result['reason']}.",
                 expression_scores=expr_result["scores"]
             )
-
-        # Step 7: All checks passed → crop and return
-        face_crop  = self._crop_face(image_bgr, bbox)
-        annotated  = self._draw_debug(image_bgr.copy(), bbox, confidence,
-                                      landmarks, w, h)
-
+        # 7. Success State Pipeline -> All checks passed → crop and return
+        face_crop = self._crop_face(image_bgr, bbox)
+        annotated = self._draw_debug(image_bgr.copy(), bbox, confidence, landmarks, w, h)
         return FaceValidationResult(
             status=ValidationStatus.VALID,
             is_valid=True,
-            message="✓ Valid face detected. Ready for physiognomy analysis.",
+            message="✓  Valid face detected.",
             face_crop=face_crop,
             face_bbox=bbox,
             detection_score=confidence,
@@ -287,15 +293,16 @@ class FaceDetectorValidator:
             annotated_image=annotated
         )
 
+
     # ──────────────────────────────────────────────────────────────
     #  Step 2: Face Detection
     # ──────────────────────────────────────────────────────────────
-
+"""
     def _detect_faces(self, image_rgb: np.ndarray) -> dict:
-        """
-        Run MediaPipe face detection.
-        Returns a dict with validation info and bounding box.
-        """
+        
+       # Run MediaPipe face detection.
+        #Returns a dict with validation info and bounding box.
+        
         results = self.face_detector.process(image_rgb)
         h, w    = image_rgb.shape[:2]
 
@@ -333,7 +340,7 @@ class FaceDetectorValidator:
             "bbox"       : (x, y, bw, bh),
             "confidence" : confidence
         }
-
+"""
     # ──────────────────────────────────────────────────────────────
     #  Step 5: Expression Check
     # ──────────────────────────────────────────────────────────────
@@ -560,6 +567,7 @@ class FaceDetectorValidator:
     def __del__(self):
         """Release MediaPipe resources."""
         if hasattr(self, 'face_detector'):
-            self.face_detector.close()
+            #self.face_detector.close()
+             self.landmarker.close()
         if hasattr(self, 'face_mesh'):
             self.face_mesh.close()

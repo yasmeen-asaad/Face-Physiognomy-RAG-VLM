@@ -176,23 +176,30 @@ class FaceDetectorValidator:
         self.config = config or Config()
         self._init_mediapipe()
 
+  
     def _init_mediapipe(self):
         """Initialize MediaPipe models (loaded once, reused for every image)."""
-      model_filename = "face_landmarker.task"
-      if not os.path.exists(model_filename):
+        import os
+        import urllib.request
+
+        model_filename = "face_landmarker.task"
+        if not os.path.exists(model_filename):
             print("Downloading face_landmarker.task topology map...")
             model_url = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
             urllib.request.urlretrieve(model_url, model_filename)
-      base_options = python.BaseOptions(model_asset_path=model_filename)
-      options = vision.FaceLandmarkerOptions(
+
+        base_options = python.BaseOptions(model_asset_path=model_filename)
+        options = vision.FaceLandmarkerOptions(
             base_options=base_options,
             running_mode=vision.RunningMode.IMAGE,
             num_faces=2, # to check if more than 2 faces --> Reject
             min_face_detection_confidence=self.config.DETECTION_CONFIDENCE,
             min_face_presence_confidence=self.config.MESH_DETECTION_CONF
         )
-      self.landmarker = vision.FaceLandmarker.create_from_options(options)
-      print(" MediaPipe FaceLandmarker Task Engine fully initialized.")
+        self.landmarker = vision.FaceLandmarker.create_from_options(options)
+        print(" MediaPipe FaceLandmarker Task Engine fully initialized.")
+
+      
        """
         # ── Face Detection ─────────────────────────────────────────
         # model_selection=1 → long-range model (up to 5 m), better for portraits

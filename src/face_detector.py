@@ -321,7 +321,7 @@ class FaceDetectorValidator:
       #  EAR = (eye_height) / (eye_width)
       #  Low EAR → squinting or winking
       # ─────────────────────────────────────────────────────────
-  def eye_aspect_ratio(top, bottom, left, right):
+      def eye_aspect_ratio(top, bottom, left, right):
         eye_h = np.linalg.norm(px(top) - px(bottom))
         eye_w = np.linalg.norm(px(left) - px(right))
         return eye_h / eye_w if eye_w > 0 else 1.0

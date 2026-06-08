@@ -282,7 +282,7 @@ class FaceDetectorValidator:
       cfg = self.config
       lm  = landmarks   # shorthand
 
-  def px(idx):
+      def px(idx):
         """Convert normalized landmark to pixel coordinates."""
         return np.array([lm[idx].x * img_w, lm[idx].y * img_h])
 

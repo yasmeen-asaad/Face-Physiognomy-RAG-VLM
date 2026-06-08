@@ -408,24 +408,24 @@ class FaceDetectorValidator:
 
   def _draw_debug(self, image: np.ndarray, bbox, confidence, landmarks, img_w, img_h) -> np.ndarray:
         """Draw bbox + key landmarks used for expression checks."""
-      image = self._draw_detection(image, bbox, confidence)
+    image = self._draw_detection(image, bbox, confidence)
 
-        # Draw key landmarks as small circles
-      key_indices = [Landmarks.UPPER_LIP_TOP, Landmarks.LOWER_LIP_BOTTOM,
-                     Landmarks.MOUTH_LEFT, Landmarks.MOUTH_RIGHT,
-                     Landmarks.RIGHT_EYE_TOP, Landmarks.RIGHT_EYE_BOTTOM,
-                     Landmarks.LEFT_EYE_TOP,  Landmarks.LEFT_EYE_BOTTOM,
-                     Landmarks.RIGHT_BROW_CENTER, Landmarks.LEFT_BROW_CENTER,
-                     Landmarks.CHIN_BOTTOM, 
-                     Landmarks.FOREHEAD_TOP,
-                     ]
-      for idx in key_indices:
-        lm = landmarks[idx]
-        px = int(lm.x * img_w)
-        py = int(lm.y * img_h)
-        cv2.circle(image, (px, py), 3, (0, 255, 255), -1)
+    # Draw key landmarks as small circles
+    key_indices = [Landmarks.UPPER_LIP_TOP, Landmarks.LOWER_LIP_BOTTOM,
+                   Landmarks.MOUTH_LEFT, Landmarks.MOUTH_RIGHT,
+                   Landmarks.RIGHT_EYE_TOP, Landmarks.RIGHT_EYE_BOTTOM,
+                   Landmarks.LEFT_EYE_TOP,  Landmarks.LEFT_EYE_BOTTOM,
+                   Landmarks.RIGHT_BROW_CENTER, Landmarks.LEFT_BROW_CENTER,
+                   Landmarks.CHIN_BOTTOM, 
+                   Landmarks.FOREHEAD_TOP,
+                   ]
+    for idx in key_indices:
+      lm = landmarks[idx]
+      px = int(lm.x * img_w)
+      py = int(lm.y * img_h)
+      cv2.circle(image, (px, py), 3, (0, 255, 255), -1)
 
-      return image
+    return image
 
     # ──────────────────────────────────────────────────────────────
     #  Helpers

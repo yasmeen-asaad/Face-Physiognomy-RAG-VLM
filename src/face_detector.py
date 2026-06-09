@@ -337,9 +337,7 @@ class FaceDetectorValidator:
       eye_l = px(Landmarks.LEFT_EYE_RIGHT)    # inner corner of left eye
       eye_r = px(Landmarks.RIGHT_EYE_LEFT)    # inner corner of right eye
       delta = eye_r - eye_l
-      tilt_deg = abs(np.degrees(np.arctan2(delta[1], delta[0])))
-      print("delta value: ", delta)
-      print("degree value ", np.degrees(np.arctan2(delta[1], delta[0])))
+      tilt_deg = np.degrees(.arctan(abs(delta[1]) / abs(delta[0])))
 
       # ── Collect all scores ────────────────────────────────────
       scores = {

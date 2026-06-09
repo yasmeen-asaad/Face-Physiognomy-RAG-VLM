@@ -222,14 +222,12 @@ class FacePartExtractor:
         cv2.imwrite("nose.jpg", nose_img)
     """
 
-    def __init__(
-        self,
-        face_crop     : np.ndarray,
-        landmarks,                              # mediapipe landmark list
-        face_bbox     : Tuple[int,int,int,int], # (x,y,w,h) in full image
-        full_img_size : Tuple[int,int],         # (height, width)
-        padding       : PaddingConfig = None
-    ):
+    def __init__(self, 
+                 face_crop : np.ndarray,
+                 landmarks, # mediapipe landmark list
+                 face_bbox : Tuple[int,int,int,int], # (x,y,w,h) in full image
+                 full_img_size : Tuple[int,int],         # (height, width)
+                 padding : PaddingConfig = None):
         self.face_crop      = face_crop
         self.landmarks      = landmarks
         self.face_bbox      = face_bbox
@@ -274,11 +272,7 @@ class FacePartExtractor:
         h  = max(ys) - y
         return x, y, max(w, 1), max(h, 1)
 
-    def _crop_with_padding(
-        self,
-        bbox    : Tuple[int,int,int,int],
-        pad_frac: float
-    ) -> Tuple[np.ndarray, Tuple[int,int,int,int]]:
+    def _crop_with_padding(self, bbox : Tuple[int,int,int,int], pad_frac: float) -> Tuple[np.ndarray, Tuple[int,int,int,int]]:
         """
         Crop from face_crop with padding, safely clamped.
 

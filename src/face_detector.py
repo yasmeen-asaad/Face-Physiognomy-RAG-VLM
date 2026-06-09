@@ -78,14 +78,14 @@ class Config:
     """
 
     # MediaPipe face detection confidence
-    DETECTION_CONFIDENCE    : float = 0.7   # minimum to accept a detection
+    DETECTION_CONFIDENCE    : float = 0.5 #0.7   # minimum to accept a detection
 
     # MediaPipe face mesh confidence
     MESH_DETECTION_CONF     : float = 0.5
     MESH_TRACKING_CONF      : float = 0.5
 
     # Minimum face size (pixels) — too small = low quality
-    MIN_FACE_SIZE_PX        : int   = 80
+    MIN_FACE_SIZE_PX        : int   = 50 # 80
 
     # Padding added around the face crop (fraction of face size)
     CROP_PADDING_RATIO      : float = 0.25
@@ -96,19 +96,19 @@ class Config:
 
     # Mouth openness: distance between upper/lower lip landmarks
     # relative to face height. > threshold → mouth open (smile/surprise)
-    MOUTH_OPEN_THRESHOLD    : float = 0.04
+    MOUTH_OPEN_THRESHOLD    : float = 0.08 #0.04
 
     # Mouth width stretch: mouth width relative to face width.
     # > threshold → wide smile
-    MOUTH_STRETCH_THRESHOLD : float = 0.52
+    MOUTH_STRETCH_THRESHOLD : float = 0.6 #0.52
 
     # Eyebrow raise: how far the brow landmark is from the eye landmark
     # relative to face height. > threshold → raised brows (surprise/anger)
-    EYEBROW_RAISE_THRESHOLD : float = 0.075
+    EYEBROW_RAISE_THRESHOLD : float = 0.10 #0.075
 
     # Eye squeeze: Eye aspect ratio. < threshold → squinting/winking
     # EAR = (vertical distances) / (2 * horizontal distance)
-    EYE_SQUEEZE_THRESHOLD   : float = 0.18
+    EYE_SQUEEZE_THRESHOLD   : float = 0.12#0.18
 
     # Head tilt: angle of the line between both eyes.
     # > threshold degrees → tilted head

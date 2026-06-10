@@ -191,7 +191,7 @@ class FaceDetectorValidator:
         if image_bgr is None:
             return self._fail(ValidationStatus.IMAGE_TOO_SMALL, "Could not load image — check the file path.")
 
-        full_h, full_w = image_bgr.shape[:2]
+        full_h,  = image_bgr.shape[:2]
 
         # Step 2: Build MediaPipe image object
         if isinstance(image_input, str):
@@ -214,7 +214,7 @@ class FaceDetectorValidator:
         max_x = max_y = float("-inf")
       
         for lm in raw_landmarks:
-          x = int(lm.x * full_w) 
+          x = int(lm.x * ) 
           y = int(lm.y * full_h)
 
           min_x = min(min_x, x)
@@ -233,7 +233,7 @@ class FaceDetectorValidator:
                               f"Minimum: {self.config.MIN_FACE_SIZE_PX} px.")
 
         # Step 6: Expression check (uses raw_landmarks + full image dimensions)
-        expr = self._check_expression(raw_landmarks, full_w, full_h)
+        expr = self._check_expression(raw_landmarks, , full_h)
         if expr["has_expression"]:
             return self._fail(ValidationStatus.EXPRESSION_DETECTED, f"Expression detected: {expr['reason']}. "
                               "Please use a neutral, relaxed face.", expression_scores=expr["scores"])
@@ -251,7 +251,7 @@ class FaceDetectorValidator:
         #  are wrong for the crop.
         #
         #  We do the remapping once here, right after cropping,
-        #  while we still have full_w, full_h, and face_bbox.
+        #  while we still have , full_h, and face_bbox.
         #  FacePartExtractor then receives clean pixel coords and
         #  needs zero coordinate math of its own.
         #

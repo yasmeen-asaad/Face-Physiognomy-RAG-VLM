@@ -229,7 +229,8 @@ class FaceDetectorValidator:
 
         # Step 5: Minimum face size check
         if fbw < self.config.MIN_FACE_SIZE_PX or fbh < self.config.MIN_FACE_SIZE_PX:
-            return self._fail(ValidationStatus.IMAGE_TOO_SMALL, f"Face too small ({fbw}×{fbh} px). "f"Minimum: {self.config.MIN_FACE_SIZE_PX} px.")
+            return self._fail(ValidationStatus.IMAGE_TOO_SMALL, f"Face too small ({fbw}×{fbh} px)." 
+                              f"Minimum: {self.config.MIN_FACE_SIZE_PX} px.")
 
         # Step 6: Expression check (uses raw_landmarks + full image dimensions)
         expr = self._check_expression(raw_landmarks, full_w, full_h)

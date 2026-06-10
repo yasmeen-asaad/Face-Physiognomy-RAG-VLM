@@ -68,6 +68,7 @@ class FaceValidationResult:
 
     # NEW — landmarks in crop-pixel space, ready for FacePartExtractor
     crop_landmarks    : Optional[List[Tuple[int,int]]]    = None
+    raw_landmarks     : Optional[list]                  = None
 
 
 # =============================================================
@@ -298,6 +299,7 @@ class FaceDetectorValidator:
                                     expression_scores = expr["scores"],
                                     annotated_image = annotated,
                                     crop_landmarks = crop_landmarks,   # ← NEW: ready for Part 2
+                                    raw_landmarks  = raw_landmarks
                                    )
 
     # ----------------------------------------------------------

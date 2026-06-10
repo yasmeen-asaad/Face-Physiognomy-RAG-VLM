@@ -1,6 +1,3 @@
-bash
-
-cat > /home/claude/face_physiognomy/src/face_detector.py << 'ENDOFFILE'
 """
 =============================================================
   Face Physiognomy Project — Part 1: Face Detection & Validation

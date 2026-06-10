@@ -87,7 +87,7 @@ class Config:
     # Expression thresholds — ratios relative to face height/width
     MOUTH_OPEN_THRESHOLD    : float = 0.09
     MOUTH_STRETCH_THRESHOLD : float = 0.65
-    EYEBROW_RAISE_THRESHOLD : float = 0.15
+    EYEBROW_RAISE_THRESHOLD : float = 0.17
     EYE_SQUEEZE_THRESHOLD   : float = 0.12
     HEAD_TILT_THRESHOLD_DEG : float = 12.0
 
@@ -299,7 +299,7 @@ class FaceDetectorValidator:
                                     expression_scores = expr["scores"],
                                     annotated_image = annotated,
                                     crop_landmarks = crop_landmarks,   # ← NEW: ready for Part 2
-                                    raw_landmarks  = raw_landmarks
+                                    #raw_landmarks  = raw_landmarks
                                    )
 
     # ----------------------------------------------------------

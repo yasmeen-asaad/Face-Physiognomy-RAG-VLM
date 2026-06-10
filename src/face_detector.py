@@ -96,34 +96,34 @@ class Config:
 # =============================================================
 
 class Landmarks:
-    """Key landmark indices for expression checks."""
-      # Mouth
-      UPPER_LIP_TOP    = 13    # inner upper lip center
-      LOWER_LIP_BOTTOM = 14    # inner lower lip center
-      MOUTH_LEFT       = 61    # left mouth corner
-      MOUTH_RIGHT      = 291   # right mouth corner
+  """Key landmark indices for expression checks."""
+  # Mouth
+  UPPER_LIP_TOP    = 13    # inner upper lip center
+  LOWER_LIP_BOTTOM = 14    # inner lower lip center
+  MOUTH_LEFT       = 61    # left mouth corner
+  MOUTH_RIGHT      = 291   # right mouth corner
 
-      # Eyes (right eye from viewer's perspective)
-      RIGHT_EYE_TOP    = 159
-      RIGHT_EYE_BOTTOM = 145
-      RIGHT_EYE_LEFT   = 133
-      RIGHT_EYE_RIGHT  = 33
+  # Eyes (right eye from viewer's perspective)
+  RIGHT_EYE_TOP    = 159
+  RIGHT_EYE_BOTTOM = 145
+  RIGHT_EYE_LEFT   = 133
+  RIGHT_EYE_RIGHT  = 33
 
-      # Eyes (left eye from viewer's perspective)
-      LEFT_EYE_TOP     = 386
-      LEFT_EYE_BOTTOM  = 374
-      LEFT_EYE_LEFT    = 362
-      LEFT_EYE_RIGHT   = 263
+  # Eyes (left eye from viewer's perspective)
+  LEFT_EYE_TOP     = 386
+  LEFT_EYE_BOTTOM  = 374
+  LEFT_EYE_LEFT    = 362
+  LEFT_EYE_RIGHT   = 263
 
-      # Eyebrows
-      RIGHT_BROW_CENTER = 105   # right eyebrow midpoint
-      LEFT_BROW_CENTER  = 334   # left  eyebrow midpoint
+  # Eyebrows
+  RIGHT_BROW_CENTER = 105   # right eyebrow midpoint
+  LEFT_BROW_CENTER  = 334   # left  eyebrow midpoint
 
-      # Face boundary for scale reference
-      CHIN_BOTTOM      = 152
-      FOREHEAD_TOP     = 10
-      FACE_LEFT        = 234
-      FACE_RIGHT       = 454
+  # Face boundary for scale reference
+  CHIN_BOTTOM      = 152
+  FOREHEAD_TOP     = 10
+  FACE_LEFT        = 234
+  FACE_RIGHT       = 454
 
 
 # =============================================================

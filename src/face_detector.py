@@ -225,7 +225,7 @@ class FaceDetectorValidator:
 
         fbw = max_x - min_x
         fbh = max_y - min_y
-        face_bbox = (min_x, min_y, fbw, fbh)
+        face_bbox = (int(min_x), int(min_y), fbw, fbh)
 
         # Step 5: Minimum face size check
         if fbw < self.config.MIN_FACE_SIZE_PX or fbh < self.config.MIN_FACE_SIZE_PX:

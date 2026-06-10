@@ -214,8 +214,8 @@ class FaceDetectorValidator:
         max_x = max_y = float("-inf")
       
         for lm in raw_landmarks:
-          x = int(lm.x * w)
-          y = int(lm.y * h)
+          x = int(lm.x * full_w) 
+          y = int(lm.y * full_h)
 
           min_x = min(min_x, x)
           max_x = max(max_x, x)

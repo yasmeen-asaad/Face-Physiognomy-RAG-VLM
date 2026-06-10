@@ -191,7 +191,7 @@ class FaceDetectorValidator:
         if image_bgr is None:
             return self._fail(ValidationStatus.IMAGE_TOO_SMALL, "Could not load image — check the file path.")
 
-        full_h,  = image_bgr.shape[:2]
+        full_h, full_w = image_bgr.shape[:2]
 
         # Step 2: Build MediaPipe image object
         if isinstance(image_input, str):
@@ -214,7 +214,7 @@ class FaceDetectorValidator:
         max_x = max_y = float("-inf")
       
         for lm in raw_landmarks:
-          x = int(lm.x * ) 
+          x = int(lm.x * full_w) 
           y = int(lm.y * full_h)
 
           min_x = min(min_x, x)

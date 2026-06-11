@@ -329,13 +329,9 @@ class RAGBuilder:
         # encode() converts each text to a vector
         # show_progress_bar=True prints a progress bar (useful on Kaggle)
         # batch_size=32 processes 32 texts at a time (memory efficient)
-        embeddings = model.encode(
-            texts,
-            show_progress_bar = True,
-            batch_size        = 32,
-            convert_to_numpy  = True,
-        )
+        embeddings = model.encode(texts, show_progress_bar = True, batch_size = 16, convert_to_numpy = True)
         embeddings = embeddings.astype("float32")
+        print("Debugging the shape of embeddings: ", len(embeddings))
         print("Debugging the shape of embeddings: ", embeddings.shape)
         self.stats.embedding_dim = embeddings.shape[1]
         print(f"      Shape: {embeddings.shape}  "

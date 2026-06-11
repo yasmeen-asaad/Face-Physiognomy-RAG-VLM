@@ -118,7 +118,7 @@ def detect_region(text: str) -> str:
     """
     text_lower = text.lower()
     for region, keywords in REGION_KEYWORDS.items():
-        if any(kw in text_lower for kw in keywords):
+        if any(kw in text_lower for kw in keywords):   #return first match, questuion, does the first key in the dict will be the most associated with the regions ad last one the least? and what's solution! 
             return region
     return "general"
 

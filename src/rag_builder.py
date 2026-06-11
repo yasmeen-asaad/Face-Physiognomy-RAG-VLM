@@ -336,7 +336,7 @@ class RAGBuilder:
             convert_to_numpy  = True,
         )
         embeddings = embeddings.astype("float32")
-
+        print("Debugging the shape of embeddings: ", embeddings.shape)
         self.stats.embedding_dim = embeddings.shape[1]
         print(f"      Shape: {embeddings.shape}  "
               f"(chunks × vector_dim)")

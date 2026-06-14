@@ -2,11 +2,26 @@
 =============================================================
   Face Physiognomy Project — RAG Builder
 =============================================================
+
+WHAT THIS FILE DOES:
   One-time script. Run it once to build the knowledge base
   from the physiognomy book PDF. Saves the index to disk.
   Never needs to run again unless the book changes.
 
-OUTPUT FILES
+CONCEPTS YOU WILL LEARN HERE:
+  1. Text extraction from PDF         → PyMuPDF
+  2. Chunking                         → splitting text into searchable pieces
+  3. Embeddings                       → converting text to vectors (numbers)
+  4. FAISS Index                      → fast similarity search structure
+
+HOW TO RUN (Kaggle):
+  !git clone https://github.com/YOUR_USERNAME/face-physiognomy-project.git
+  import sys; sys.path.insert(0, 'face-physiognomy-project/src')
+  from rag_builder import RAGBuilder
+  builder = RAGBuilder(pdf_path="book.pdf", output_dir="rag_index")
+  builder.build()
+
+OUTPUT FILES (save these as a Kaggle Dataset):
   rag_index/
   ├── index.faiss      ← the search index (vectors)
   ├── chunks.pkl       ← the original text chunks with metadata
@@ -118,7 +133,7 @@ def detect_region(text: str) -> str:
     """
     text_lower = text.lower()
     for region, keywords in REGION_KEYWORDS.items():
-        if any(kw in text_lower for kw in keywords):   #return first match, questuion, does the first key in the dict will be the most associated with the regions ad last one the least? and what's solution! 
+        if any(kw in text_lower for kw in keywords):
             return region
     return "general"
 
@@ -329,8 +344,14 @@ class RAGBuilder:
         # encode() converts each text to a vector
         # show_progress_bar=True prints a progress bar (useful on Kaggle)
         # batch_size=32 processes 32 texts at a time (memory efficient)
-        embeddings = model.encode(texts, show_progress_bar = True, batch_size = 16, convert_to_numpy = True)
+        embeddings = model.encode(
+            texts,
+            show_progress_bar = True,
+            batch_size        = 32,
+            convert_to_numpy  = True,
+        )
         embeddings = embeddings.astype("float32")
+
         self.stats.embedding_dim = embeddings.shape[1]
         print(f"      Shape: {embeddings.shape}  "
               f"(chunks × vector_dim)")

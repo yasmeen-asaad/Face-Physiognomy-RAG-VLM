@@ -1,44 +1,259 @@
 """
 =============================================================
-  Face Physiognomy Project — RAG Builder
+  Face Physiognomy Project — RAG Builder  (v2)
 =============================================================
+
+CHANGES FROM v1:
+  - OCR-based extraction (EasyOCR) instead of PyMuPDF text layer
+    because the book is a scanned PDF with no embedded text.
+  - Chapter/page mapping instead of keyword detection
+    because we have the book's table of contents as ground truth.
 
 WHAT THIS FILE DOES:
   One-time script. Run it once to build the knowledge base
   from the physiognomy book PDF. Saves the index to disk.
-  Never needs to run again unless the book changes.
 
-CONCEPTS YOU WILL LEARN HERE:
-  1. Text extraction from PDF         → PyMuPDF
-  2. Chunking                         → splitting text into searchable pieces
-  3. Embeddings                       → converting text to vectors (numbers)
-  4. FAISS Index                      → fast similarity search structure
+PIPELINE:
+  PDF page
+    → render as image        (PyMuPDF)
+    → OCR                    (EasyOCR)
+    → clean text
+    → assign region+chapter  (CHAPTER_MAPPING — page-based)
+    → embed                  (sentence-transformers)
+    → FAISS index
+    → save to disk
 
-HOW TO RUN (Kaggle):
+HOW TO RUN ON KAGGLE:
+  !pip install pymupdf easyocr sentence-transformers faiss-cpu -q
   !git clone https://github.com/YOUR_USERNAME/face-physiognomy-project.git
   import sys; sys.path.insert(0, 'face-physiognomy-project/src')
+
   from rag_builder import RAGBuilder
-  builder = RAGBuilder(pdf_path="book.pdf", output_dir="rag_index")
+  builder = RAGBuilder(
+      pdf_path   = "/kaggle/input/your-book/book.pdf",
+      output_dir = "/kaggle/working/rag_index",
+  )
   builder.build()
 
-OUTPUT FILES (save these as a Kaggle Dataset):
+OUTPUT (save as Kaggle Dataset):
   rag_index/
-  ├── index.faiss      ← the search index (vectors)
-  ├── chunks.pkl       ← the original text chunks with metadata
-  └── build_info.json  ← stats about the build (for debugging)
+  ├── index.faiss       ← FAISS search index
+  ├── chunks.pkl        ← TextChunk objects (text + metadata)
+  └── build_info.json   ← build stats for debugging
 
 Install:
-  pip install pymupdf sentence-transformers faiss-cpu
+  pip install pymupdf easyocr sentence-transformers faiss-cpu
 """
 
 import os
 import json
 import pickle
 from dataclasses import dataclass, field, asdict
-from typing import List, Dict, Optional
+from typing import List, Dict, Tuple, Optional
 from collections import Counter
 
 import numpy as np
+
+
+# =============================================================
+#  Chapter / Page Mapping
+# =============================================================
+#
+#  CONCEPT: Why page-based mapping instead of keyword detection?
+#
+#  We have the book's table of contents — that is ground truth.
+#  Keyword matching tries to GUESS what we already KNOW.
+#  Page-based mapping is:
+#    - 100% accurate (no guessing)
+#    - Deterministic (same page always → same region)
+#    - Extensible (add chapter granularity for free)
+#
+#  Structure per region:
+#    "region_name": {
+#        "pages"   : (start_page, end_page),   ← inclusive, book-numbered
+#        "chapters": { page_num: "chapter_name", ... }
+#    }
+#
+#  HOW IT WORKS AT RUNTIME:
+#    chunk on page 29 → lookup → region="nose", chapter="nose_ridge"
+#    chunk on page 17 → lookup → region="eyes", chapter="eyes_spacing"
+#    chunk on page 5  → lookup → region="general", chapter="introduction"
+
+CHAPTER_MAPPING: Dict[str, Dict] = {
+    "forehead": {
+        "pages": (11, 12),
+        "chapters": {
+            11: "forehead_shapes",
+            12: "forehead_shapes",
+        }
+    },
+    "eyebrows": {
+        "pages": (13, 16),
+        "chapters": {
+            13: "eyebrows_basic_shapes",
+            14: "eyebrows_basic_shapes",
+            15: "eyebrows_position",
+            16: "eyebrows_specific_types",
+        }
+    },
+    "eyes": {
+        "pages": (17, 26),
+        "chapters": {
+            17: "eyes_spacing",
+            18: "eyes_angle",
+            19: "eyes_depth",
+            20: "eyes_iris_size",
+            21: "eyes_corner_indents",
+            22: "eyes_pupil_response",
+            23: "eyes_stress_signs",
+            24: "eyelids_top",
+            25: "eyelids_bottom",
+            26: "eyelashes_and_eye_puffs",
+        }
+    },
+    "nose": {
+        "pages": (27, 35),
+        "chapters": {
+            27: "nose_size_shape",
+            28: "nose_size_shape",
+            29: "nose_ridge",
+            30: "nose_width",
+            31: "nose_tip_angle",
+            32: "nose_tip_size_shape",
+            33: "nose_tip_size_shape",
+            34: "nostrils_size_shape",
+            35: "nostrils_size_shape",
+        }
+    },
+    "ears": {
+        "pages": (36, 41),
+        "chapters": {
+            36: "ears_size",
+            37: "ears_cups_ridges",
+            38: "ears_placement",
+            39: "ears_placement",
+            40: "ears_height",
+            41: "ear_eyebrow_combinations",
+        }
+    },
+    "cheeks": {
+        "pages": (42, 43),
+        "chapters": {
+            42: "cheeks",
+            43: "cheeks",
+        }
+    },
+    "mouth": {
+        "pages": (44, 45),
+        "chapters": {
+            44: "mouth_size",
+            45: "mouth_angle",
+        }
+    },
+    "lips": {
+        "pages": (46, 47),
+        "chapters": {
+            46: "lips_size_shape",
+            47: "lips_size_shape",
+        }
+    },
+    "teeth": {
+        "pages": (48, 48),
+        "chapters": {
+            48: "teeth",
+        }
+    },
+    "smiles": {
+        "pages": (49, 49),
+        "chapters": {
+            49: "smiles",
+        }
+    },
+    "jaw": {
+        "pages": (50, 50),
+        "chapters": {
+            50: "jaws",
+        }
+    },
+    "chin": {
+        "pages": (51, 58),
+        "chapters": {
+            51: "chins",
+            52: "chins",
+            53: "chins",
+            54: "chins",
+            55: "chin_eyebrow_combinations",
+            56: "chin_eyebrow_combinations",
+            57: "chin_eyebrow_combinations",
+            58: "chin_eyebrow_combinations",
+        }
+    },
+    "facial_marks": {
+        "pages": (59, 68),
+        "chapters": {
+            59: "dimples_clefts",
+            60: "dimples_clefts",
+            61: "lines",
+            62: "lines",
+            63: "lines",
+            64: "lines",
+            65: "lines",
+            66: "lines",
+            67: "facial_hair",
+            68: "facial_hair",
+        }
+    },
+    "face_overview": {
+        "pages": (69, 80),
+        "chapters": {
+            69: "face_shape",
+            70: "face_shape",
+            71: "face_shape",
+            72: "face_types",
+            73: "combination_face_types",
+            74: "facial_dominance",
+            75: "facial_dominance",
+            76: "profile_types",
+            77: "profile_types",
+            78: "profile_combinations",
+            79: "head_types",
+            80: "head_types",
+        }
+    },
+}
+
+
+def get_region_and_chapter(page_num: int) -> Tuple[str, str]:
+    """
+    Look up which region and chapter a page belongs to.
+
+    This replaces the old keyword detection entirely.
+    One page → one region → one chapter. No ambiguity.
+
+    Args:
+        page_num : book page number (human-readable, 1-indexed)
+
+    Returns:
+        (region, chapter) tuple
+        e.g. (29) → ("nose", "nose_ridge")
+             (17) → ("eyes", "eyes_spacing")
+             (5)  → ("general", "introduction")
+
+    HOW IT WORKS:
+        Iterates CHAPTER_MAPPING and checks if page_num falls
+        within the (start, end) range of each region.
+        Returns the chapter label for that specific page.
+    """
+    for region, data in CHAPTER_MAPPING.items():
+        start, end = data["pages"]
+        if start <= page_num <= end:
+            # Get specific chapter for this page
+            # Fall back to region name if page not explicitly mapped
+            chapter = data["chapters"].get(page_num, region)
+            return region, chapter
+
+    # Page is outside all mapped ranges (intro, appendix, etc.)
+    return "general", "introduction"
 
 
 # =============================================================
@@ -48,20 +263,26 @@ import numpy as np
 @dataclass
 class TextChunk:
     """
-    One searchable piece of the book.
+    One searchable unit from the book.
 
-    WHY we store all this metadata:
-      When the RAG returns a result, we want to know not just
-      WHAT it said, but WHERE in the book it came from (page),
-      and WHICH facial region it's about (region).
-      The region tag lets us filter results later — e.g. only
-      return chunks about the nose when analysing the nose crop.
+    WHY store region + chapter separately?
+      region  → broad filter  ("search only nose chunks")
+      chapter → fine filter   ("search only nose_ridge chunks")
+      The Agentic AI can decide which granularity to use.
+
+    Example:
+      chunk_id = "p29_3"
+      page     = 29
+      region   = "nose"
+      chapter  = "nose_ridge"
+      content  = "The nose ridge, or nasal bridge..."
     """
-    chunk_id : str            # unique ID e.g. "p42_3"
-    page     : int            # page number in the book (human-readable)
-    region   : str            # detected facial region (or "general")
-    content  : str            # the actual text
-    char_len : int = 0        # character count (set automatically)
+    chunk_id : str
+    page     : int
+    region   : str
+    chapter  : str
+    content  : str
+    char_len : int = 0
 
     def __post_init__(self):
         self.char_len = len(self.content)
@@ -69,73 +290,15 @@ class TextChunk:
 
 @dataclass
 class BuildStats:
-    """Stats collected during the build — useful for debugging."""
-    pdf_path        : str   = ""
-    pages_extracted : int   = 0
-    pages_empty     : int   = 0
-    total_chunks    : int   = 0
-    embedding_dim   : int   = 0
-    region_dist     : dict  = field(default_factory=dict)
-    embed_model     : str   = ""
-
-
-# =============================================================
-#  Region Keyword Map
-# =============================================================
-#
-# CONCEPT: Keyword-based region tagging
-#
-# When we extract text from the book, we don't know which facial
-# region each paragraph is about. We use keyword matching to tag
-# each chunk with a region label.
-#
-# WHY THIS MATTERS FOR RAG:
-#   Later, when we analyse the nose crop, we can filter the search
-#   to only return chunks tagged "nose". This makes results more
-#   relevant and reduces noise.
-#
-# LIMITATION: Keyword matching is simple and can be wrong.
-#   A paragraph about "the nose affecting personality" might
-#   mention "eyes" too. That's fine — we just tag it with the
-#   FIRST matching region. Good enough for v1.
-
-REGION_KEYWORDS: Dict[str, List[str]] = {
-    "forehead"  : ["forehead", "brow", "frontal lobe", "hairline"],
-    "eyebrows"  : ["eyebrow", "brow shape", "brow line"],
-    "eyes"      : ["eye ", "eyes", "eyelid", "eyelash", "iris",
-                   "pupil", "eye corner", "eye spacing"],
-    "nose"      : ["nose", "nostril", "nasal", "nose bridge",
-                   "nose tip", "nose ridge", "nose width"],
-    "mouth"     : ["mouth", "lip", "lips", "teeth", "smile",
-                   "upper lip", "lower lip"],
-    "jaw_chin"  : ["jaw", "chin", "mandible", "jawline"],
-    "cheeks"    : ["cheek", "cheekbone", "malar"],
-    "ears"      : ["ear ", "ears", "earlobe", "ear shape"],
-    "whole_face": ["face shape", "face type", "facial structure",
-                   "head shape", "facial symmetry", "profile",
-                   "oval face", "round face", "square face"],
-    "lines"     : ["wrinkle", "line ", "lines", "furrow", "crease"],
-    "hair"      : ["hair", "beard", "mustache", "facial hair"],
-}
-
-
-def detect_region(text: str) -> str:
-    """
-    Detect which facial region a text chunk is about.
-
-    Strategy: check if any keyword from each region appears
-    in the text. Return the first match, or "general" if none.
-
-    WHY "general" and not skip?
-      Some chunks discuss overall personality or methodology.
-      These are still useful context for the LLM, so we keep
-      them tagged as "general" rather than throwing them away.
-    """
-    text_lower = text.lower()
-    for region, keywords in REGION_KEYWORDS.items():
-        if any(kw in text_lower for kw in keywords):
-            return region
-    return "general"
+    """Collected during build — for debugging and logging."""
+    pdf_path        : str  = ""
+    pages_processed : int  = 0
+    pages_empty     : int  = 0
+    total_chunks    : int  = 0
+    embedding_dim   : int  = 0
+    region_dist     : dict = field(default_factory=dict)
+    chapter_dist    : dict = field(default_factory=dict)
+    embed_model     : str  = ""
 
 
 # =============================================================
@@ -144,31 +307,32 @@ def detect_region(text: str) -> str:
 
 class RAGBuilder:
     """
-    Builds the RAG knowledge base from the physiognomy book PDF.
+    Builds the RAG knowledge base from a scanned PDF book.
 
-    The 4-step pipeline:
+    4-step pipeline:
       extract() → chunk() → embed() → save()
-
     All steps called automatically by build().
 
     Usage:
         builder = RAGBuilder(
             pdf_path   = "/path/to/book.pdf",
             output_dir = "rag_index",
-            start_page = 8,    # page 9  (0-indexed)
-            end_page   = 127,  # page 128 (0-indexed)
+            start_page = 11,   # first meaningful page (book-numbered)
+            end_page   = 128,  # last page to process
         )
         builder.build()
     """
 
     def __init__(
         self,
-        pdf_path    : str,
-        output_dir  : str  = "rag_index",
-        start_page  : int  = 8,       # 0-indexed → page 9
-        end_page    : int  = 127,     # 0-indexed → page 128
-        min_chunk_len    : int  = 80,  # ignore paragraphs shorter than this
+        pdf_path         : str,
+        output_dir       : str  = "rag_index",
+        start_page       : int  = 11,    # book page 11 = first content page
+        end_page         : int  = 128,
+        min_chunk_len    : int  = 60,    # skip paragraphs shorter than this
         embed_model_name : str  = "all-MiniLM-L6-v2",
+        ocr_gpu          : bool = False, # set True if Kaggle GPU is enabled
+        render_dpi       : int  = 200,   # higher = better OCR, slower
     ):
         self.pdf_path         = pdf_path
         self.output_dir       = output_dir
@@ -176,63 +340,125 @@ class RAGBuilder:
         self.end_page         = end_page
         self.min_chunk_len    = min_chunk_len
         self.embed_model_name = embed_model_name
+        self.ocr_gpu          = ocr_gpu
+        self.render_dpi       = render_dpi
 
-        self.chunks     : List[TextChunk] = []
+        # render_dpi → fitz zoom factor (72 DPI is fitz default)
+        self.zoom = render_dpi / 72
+
+        self.chunks     : List[TextChunk]      = []
         self.embeddings : Optional[np.ndarray] = None
-        self.stats      = BuildStats(pdf_path=pdf_path,
-                                     embed_model=embed_model_name)
+        self.stats      = BuildStats(
+            pdf_path    = pdf_path,
+            embed_model = embed_model_name
+        )
 
     # ----------------------------------------------------------
-    #  Step 1: Extract Text from PDF
+    #  Step 1: Extract Text via OCR
     # ----------------------------------------------------------
 
     def extract(self) -> List[Dict]:
         """
-        Extract raw text from each page of the PDF.
+        Convert each PDF page to an image, then run EasyOCR.
 
-        LIBRARY: PyMuPDF (imported as fitz)
-          - fitz.open()         → open the PDF
-          - doc[i].get_text()   → extract text from page i
-          - "text" mode         → plain text, preserves line breaks
+        WHY render as image first?
+          The PDF is scanned — pages are stored as images inside
+          the PDF container. get_text() returns nothing because
+          there is no text layer. We must:
+            1. Render the page to a pixel image (PyMuPDF)
+            2. Pass that image to an OCR engine (EasyOCR)
 
-        WHY NOT USE PyPDF2 or pdfplumber?
-          PyMuPDF (fitz) is faster and handles more PDF types.
-          It also preserves text order better for multi-column layouts.
+        WHY EasyOCR over Tesseract?
+          - No system install needed (pure pip)
+          - Better accuracy on clean scanned text
+          - Simple API: reader.readtext(image)
+          - Works well on Kaggle out of the box
+
+        WHY render_dpi=200?
+          Higher DPI = larger image = better OCR accuracy.
+          200 DPI is a good balance between quality and speed.
+          For very small text, try 250 or 300.
 
         Returns:
-            List of {"page": int, "content": str} dicts
+            List of {"page": int, "content": str}
+            page is the BOOK page number (human-readable)
         """
-        import fitz   # pymupdf
+        import fitz      # PyMuPDF — for rendering pages as images
+        import easyocr   # OCR engine
 
-        print(f"[1/4] Extracting text from {self.pdf_path}")
-        print(f"      Pages: {self.start_page+1} → {self.end_page+1}")
+        print(f"[1/4] Extracting text via OCR")
+        print(f"      PDF   : {self.pdf_path}")
+        print(f"      Pages : {self.start_page} → {self.end_page}")
+        print(f"      DPI   : {self.render_dpi}  (zoom={self.zoom:.1f}x)")
+        print(f"      GPU   : {self.ocr_gpu}")
 
-        doc   = fitz.open(self.pdf_path)
-        pages = []
+        # Initialize EasyOCR — loads the model once, reused per page
+        # lang_list=['en'] → English only (faster, more accurate for this book)
+        print("      Loading EasyOCR model (first time may take ~30 sec)...")
+        reader = easyocr.Reader(
+            lang_list          = ['en'],
+            gpu                = self.ocr_gpu,
+            verbose            = False,
+        )
 
-        for i in range(self.start_page, self.end_page + 1):
-            text = doc[i].get_text("text").strip()
+        doc    = fitz.open(self.pdf_path)
+        pages  = []
+        matrix = fitz.Matrix(self.zoom, self.zoom)  # zoom matrix for rendering
 
-            if text:
-                # Basic cleaning:
-                # Remove lines that are just page numbers or headers
-                lines = [
-                    line.strip() for line in text.split("\n")
-                    if len(line.strip()) > 3          # skip very short lines
-                    and not line.strip().isdigit()    # skip page numbers
-                ]
-                clean_text = "\n".join(lines)
-                if clean_text:
-                    pages.append({"page": i + 1, "content": clean_text})
-                else:
-                    self.stats.pages_empty += 1
+        # PDF page index is 0-based, book page numbers are 1-based.
+        # We assume book page N = PDF page index N-1.
+        # Adjust pdf_page_offset if your PDF has extra pages at the start.
+        pdf_page_offset = 0   # change if book page 11 ≠ PDF index 10
+
+        for book_page in range(self.start_page, self.end_page + 1):
+            pdf_idx = book_page - 1 + pdf_page_offset
+
+            if pdf_idx >= len(doc):
+                print(f"      WARNING: book page {book_page} → "
+                      f"PDF index {pdf_idx} out of range. Stopping.")
+                break
+
+            # ── Render page as image ───────────────────────────
+            #
+            # get_pixmap() renders the PDF page to a pixel grid.
+            # matrix controls the zoom (resolution).
+            # clip=None → render the full page.
+            #
+            pix = doc[pdf_idx].get_pixmap(matrix=matrix, alpha=False)
+
+            # Convert pixmap to numpy array for EasyOCR
+            # pix.samples = raw bytes (RGB)
+            # reshape to (height, width, channels)
+            img = np.frombuffer(pix.samples, dtype=np.uint8)
+            img = img.reshape(pix.h, pix.w, pix.n)
+
+            # ── Run OCR ───────────────────────────────────────
+            #
+            # readtext() returns a list of:
+            #   [bounding_box, text, confidence]
+            #
+            # detail=0 → return only the text strings (faster)
+            # paragraph=True → group nearby text into paragraphs
+            #
+            ocr_results = reader.readtext(img, detail=0, paragraph=True)
+
+            # Join all detected text blocks into one string
+            raw_text = "\n".join(ocr_results).strip()
+
+            if raw_text:
+                pages.append({
+                    "page"    : book_page,
+                    "content" : raw_text,
+                })
+                print(f"      p{book_page:>3} ✓  ({len(raw_text):>5} chars)")
             else:
                 self.stats.pages_empty += 1
+                print(f"      p{book_page:>3} ✗  (empty — check PDF offset)")
 
         doc.close()
-        self.stats.pages_extracted = len(pages)
-        print(f"      Extracted: {len(pages)} pages "
-              f"({self.stats.pages_empty} empty/skipped)")
+        self.stats.pages_processed = len(pages)
+        print(f"\n      Done: {len(pages)} pages extracted, "
+              f"{self.stats.pages_empty} empty")
         return pages
 
     # ----------------------------------------------------------
@@ -241,48 +467,58 @@ class RAGBuilder:
 
     def chunk(self, pages: List[Dict]) -> List[TextChunk]:
         """
-        Split pages into smaller searchable paragraphs (chunks).
+        Split each page's text into paragraph-level chunks.
+        Assign region + chapter from CHAPTER_MAPPING (page-based).
 
-        CONCEPT: Why chunk at all?
-          The embedding model has a max input length (~512 tokens).
-          A full page is too long. We split into paragraphs so:
-            1. Each chunk fits the model's context window
-            2. Search results are more precise (paragraph vs full page)
-            3. We can tag each chunk with a region (nose, eye, etc.)
+        WHY paragraph-level chunks?
+          - Fits within the embedding model's context window (~512 tokens)
+          - More precise search results (paragraph vs full page)
+          - Each chunk focuses on one idea
 
-        CHUNKING STRATEGY: Split by double newline (paragraph break)
-          This is the simplest strategy. In v2, you could use
-          RecursiveCharacterTextSplitter from LangChain for smarter
-          overlap-based chunking.
+        WHY NOT overlap-based chunking?
+          Our chunks are naturally bounded by paragraphs.
+          Overlap (e.g. LangChain's RecursiveCharacterTextSplitter)
+          is better for dense technical text with no clear breaks.
+          For a face-reading book with short paragraphs, paragraph
+          splitting is cleaner and more interpretable.
 
-        Returns:
-            List[TextChunk] with chunk_id, page, region, content
+        HOW REGION IS ASSIGNED:
+          chunk on page 29 → get_region_and_chapter(29)
+                           → ("nose", "nose_ridge")
+          No keyword guessing. Deterministic. Always correct.
         """
         print(f"\n[2/4] Chunking text")
 
         chunks  = []
-        counter = 0   # global chunk counter for unique IDs
+        counter = 0
 
         for page_data in pages:
-            # Split on paragraph breaks (double newline)
-            # This works well for books where paragraphs are
-            # separated by blank lines.
+            book_page = page_data["page"]
+            region, chapter = get_region_and_chapter(book_page)
+
+            # Split on double newline (paragraph boundary)
+            # EasyOCR with paragraph=True already groups text,
+            # so each item in the OCR output is roughly a paragraph.
+            # We split again here in case multiple paragraphs were merged.
             raw_paragraphs = page_data["content"].split("\n\n")
 
-            for para in raw_paragraphs:
-                clean = para.strip()
+            # If no double newlines, treat each line as a chunk
+            if len(raw_paragraphs) == 1:
+                raw_paragraphs = page_data["content"].split("\n")
 
-                # Skip chunks that are too short to be meaningful
-                # (headers, captions, standalone numbers, etc.)
+            for para in raw_paragraphs:
+                clean = " ".join(para.split())   # normalize whitespace
+
+                # Skip chunks that are too short
+                # (OCR noise, headers, page numbers, etc.)
                 if len(clean) < self.min_chunk_len:
                     continue
 
-                region = detect_region(clean)
-
                 chunk = TextChunk(
-                    chunk_id = f"p{page_data['page']}_{counter}",
-                    page     = page_data["page"],
+                    chunk_id = f"p{book_page}_{counter}",
+                    page     = book_page,
                     region   = region,
+                    chapter  = chapter,
                     content  = clean,
                 )
                 chunks.append(chunk)
@@ -290,15 +526,15 @@ class RAGBuilder:
 
         # Stats
         self.stats.total_chunks = len(chunks)
-        region_dist = Counter(c.region for c in chunks)
-        self.stats.region_dist = dict(region_dist)
+        self.stats.region_dist  = dict(Counter(c.region  for c in chunks))
+        self.stats.chapter_dist = dict(Counter(c.chapter for c in chunks))
 
         print(f"      Total chunks: {len(chunks)}")
-        print(f"      Region distribution:")
-        for region, count in sorted(region_dist.items(),
+        print(f"\n      Region distribution:")
+        for region, count in sorted(self.stats.region_dist.items(),
                                     key=lambda x: -x[1]):
             bar = "█" * (count // 2)
-            print(f"        {region:<15} {count:>4}  {bar}")
+            print(f"        {region:<20} {count:>4}  {bar}")
 
         self.chunks = chunks
         return chunks
@@ -312,49 +548,40 @@ class RAGBuilder:
         Convert each chunk's text into a vector (embedding).
 
         CONCEPT: What is an embedding?
-          An embedding is a list of numbers (e.g. 384 numbers) that
-          represents the MEANING of a sentence. Sentences with similar
-          meanings will have vectors that are close to each other in
-          mathematical space.
+          A list of numbers that represents the MEANING of text.
+          Similar meanings → similar vectors (close in space).
 
-          Example:
-            "wide nose with flared nostrils"  → [0.2, -0.5, 0.8, ...]
-            "broad nasal with open nostrils"  → [0.19, -0.48, 0.79, ...]
-            "blue sky on a sunny day"         → [-0.9, 0.3, -0.1, ...]
+          "wide nose with flared nostrils" → [0.2, -0.5, 0.8, ...]
+          "broad nasal with open nostrils" → [0.19, -0.48, 0.79, ...]
+          "blue sky today"                 → [-0.9,  0.3, -0.1, ...]
 
-          The first two are CLOSE (similar meaning).
-          The third is FAR (different topic).
+          The first two are CLOSE. The third is FAR.
+          This is how RAG finds relevant results without exact keywords.
 
         MODEL: all-MiniLM-L6-v2
           - 384-dimensional vectors
-          - Fast and accurate for English
-          - Free, runs on CPU
+          - Fast, accurate, free, English-optimized
+          - Max input: ~256 words per chunk (our chunks are shorter)
 
         Returns:
-            numpy array of shape (num_chunks, 384)
+            numpy float32 array, shape = (num_chunks, 384)
         """
         from sentence_transformers import SentenceTransformer
 
         print(f"\n[3/4] Embedding {len(chunks)} chunks")
         print(f"      Model: {self.embed_model_name}")
 
-        model = SentenceTransformer(self.embed_model_name)
-        texts = [c.content for c in chunks]
-
-        # encode() converts each text to a vector
-        # show_progress_bar=True prints a progress bar (useful on Kaggle)
-        # batch_size=32 processes 32 texts at a time (memory efficient)
+        model      = SentenceTransformer(self.embed_model_name)
+        texts      = [c.content for c in chunks]
         embeddings = model.encode(
             texts,
             show_progress_bar = True,
             batch_size        = 32,
             convert_to_numpy  = True,
-        )
-        embeddings = embeddings.astype("float32")
+        ).astype("float32")
 
         self.stats.embedding_dim = embeddings.shape[1]
-        print(f"      Shape: {embeddings.shape}  "
-              f"(chunks × vector_dim)")
+        print(f"      Shape: {embeddings.shape}  (chunks × vector_dim)")
 
         self.embeddings = embeddings
         return embeddings
@@ -365,61 +592,60 @@ class RAGBuilder:
 
     def save(self, embeddings: np.ndarray):
         """
-        Build a FAISS index from the embeddings and save everything.
+        Build FAISS index and save everything to disk.
 
         CONCEPT: What is FAISS?
-          FAISS = Facebook AI Similarity Search.
-          It takes all your vectors and builds an internal structure
-          that allows finding the NEAREST vectors to a query vector
-          VERY FAST — even with millions of vectors.
+          Facebook AI Similarity Search.
+          Stores all vectors and finds the NEAREST ones to a query
+          very fast — even with millions of vectors.
 
-          IndexFlatL2 = the simplest index type.
-          L2 = Euclidean distance (straight-line distance between vectors).
-          "Flat" = no compression, exact search.
-          Good for < 100k vectors. For larger datasets use IndexIVFFlat.
+          IndexFlatL2:
+            "Flat"  = no compression (exact search, not approximate)
+            "L2"    = Euclidean distance between vectors
+            Best for our size (~500-1000 chunks). Exact and fast.
 
         WHAT GETS SAVED:
-          index.faiss  → the FAISS index (the vectors + search structure)
-          chunks.pkl   → the original TextChunk objects (with text + metadata)
+          index.faiss   → the vectors + FAISS search structure
+          chunks.pkl    → original TextChunk objects (text + metadata)
+                          FAISS returns indices — we look up text here
           build_info.json → stats for debugging
 
-        WHY SAVE SEPARATELY?
-          FAISS only stores vectors (numbers). It doesn't store the
-          original text. So when search returns "vector #42 is the closest",
-          we need chunks.pkl to look up what text chunk #42 actually says.
+        WHY TWO SEPARATE FILES?
+          FAISS only stores numbers (vectors), not text.
+          When search returns "index 42 is closest", we need chunks.pkl
+          to find out what chunk 42 actually says.
+          The index in chunks[42] matches the FAISS vector index 42.
         """
         import faiss
 
-        print(f"\n[4/4] Building FAISS index and saving")
+        print(f"\n[4/4] Building FAISS index")
         os.makedirs(self.output_dir, exist_ok=True)
 
-        # Build the index
-        dim   = embeddings.shape[1]          # 384 for MiniLM
-        index = faiss.IndexFlatL2(dim)       # simple exact-search index
-        index.add(embeddings)                # add all vectors
-
-        print(f"      Index: {index.ntotal} vectors, dim={dim}")
+        # Build index
+        dim   = embeddings.shape[1]
+        index = faiss.IndexFlatL2(dim)
+        index.add(embeddings)
+        print(f"      Vectors: {index.ntotal}, dim={dim}")
 
         # Save FAISS index
         faiss_path = os.path.join(self.output_dir, "index.faiss")
         faiss.write_index(index, faiss_path)
-        print(f"      Saved: {faiss_path}")
+        print(f"      Saved : {faiss_path}")
 
-        # Save chunks (text + metadata)
+        # Save chunks
         chunks_path = os.path.join(self.output_dir, "chunks.pkl")
         with open(chunks_path, "wb") as f:
             pickle.dump(self.chunks, f)
-        print(f"      Saved: {chunks_path}")
+        print(f"      Saved : {chunks_path}")
 
         # Save build info
         info_path = os.path.join(self.output_dir, "build_info.json")
         with open(info_path, "w") as f:
             json.dump(asdict(self.stats), f, indent=2)
-        print(f"      Saved: {info_path}")
+        print(f"      Saved : {info_path}")
 
-        print(f"\n✓ RAG index built successfully in '{self.output_dir}/'")
-        print(f"  → Upload this folder as a Kaggle Dataset")
-        print(f"  → Then import it in your other notebooks")
+        print(f"\n✓ RAG index ready in '{self.output_dir}/'")
+        print(f"  Next step: upload this folder as a Kaggle Dataset")
 
     # ----------------------------------------------------------
     #  Main Entry Point
@@ -428,10 +654,12 @@ class RAGBuilder:
     def build(self):
         """
         Run the full pipeline: extract → chunk → embed → save.
-        Call this once per book. Takes ~2-5 min on Kaggle CPU.
+
+        Runtime on Kaggle CPU: ~15-30 min (OCR is the slow step).
+        Runtime on Kaggle GPU: ~5-10 min (EasyOCR uses GPU).
         """
         print("=" * 55)
-        print("  RAG Builder — Face Physiognomy Project")
+        print("  RAG Builder v2 — Face Physiognomy Project")
         print("=" * 55)
 
         pages      = self.extract()
@@ -440,30 +668,9 @@ class RAGBuilder:
         self.save(embeddings)
 
         print("\n" + "=" * 55)
-        print(f"  Done! {self.stats.total_chunks} chunks indexed")
+        print(f"  Total chunks  : {self.stats.total_chunks}")
         print(f"  Embedding dim : {self.stats.embedding_dim}")
         print(f"  Regions found : {len(self.stats.region_dist)}")
         print("=" * 55)
 
         return self.stats
-
-
-# =============================================================
-#  Quick Kaggle Usage  (copy into a Kaggle cell)
-# =============================================================
-#
-# from rag_builder import RAGBuilder
-#
-# builder = RAGBuilder(
-#     pdf_path   = "/kaggle/input/physio-book/book.pdf",
-#     output_dir = "/kaggle/working/rag_index",
-#     start_page = 8,    # page 9
-#     end_page   = 127,  # page 128
-# )
-# builder.build()
-#
-# After running:
-#   Go to Kaggle → Datasets → New Dataset
-#   Upload the /kaggle/working/rag_index/ folder
-#   Name it "physio-rag-index"
-#   Then import it in your other notebooks as input

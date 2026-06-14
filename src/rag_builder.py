@@ -331,10 +331,6 @@ class RAGBuilder:
         # batch_size=32 processes 32 texts at a time (memory efficient)
         embeddings = model.encode(texts, show_progress_bar = True, batch_size = 16, convert_to_numpy = True)
         embeddings = embeddings.astype("float32")
-        print("Debugging the shape of chunks: ", len(chunks))
-        print("Debugging the shape of chunks: ", chunks.shape)
-        print("Debugging the shape of texts: ", len(texts))
-        print("Debugging the shape of texts: ", texts.shape)
         self.stats.embedding_dim = embeddings.shape[1]
         print(f"      Shape: {embeddings.shape}  "
               f"(chunks × vector_dim)")

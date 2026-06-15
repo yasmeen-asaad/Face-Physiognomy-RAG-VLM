@@ -1,48 +1,38 @@
 class FaceDescriptor:
-    self.features_map = {
-        "nose": ["nose_size_shape", "nose_ridge", "nose_width", "nose_tip_angle", "nose_tip_size_shape", "nostrils_size_shape"]
+     def __init__(self):
+        self.features_map = = {
+            "nose": ["nose_size_shape", "nose_ridge", "nose_width", "nose_tip_angle", "nose_tip_size_shape", "nostrils_size_shape"],
+            "eyes": ["eyes_spacing", "eyes_angle", "eyes_depth", "eye_puffs", "eyelashes", "eye_color", "eyes_corner_indents_and_eyes_iris_size", "eyelids_top", "eyelids_bottom"],
+            "eyebrows": ["eyebrows_basic_shapes", "eyebrows_position", "eyebrows_color"],
+            "forehead": ["forehead_shapes", "forehead_lines"],
+            "mouth": ["mouth_size", "mouth_angle", "lips_size", "teeth", "smiles"],
+            "jaw_chin": ["cheeks", "jaws", "chins", "dimples", "clefts"],
+            "ears": ["ears_size", "ears_cups_ridges", "ears_placement", "ears_height"],
+            "face_overview": ["face_shape", "face_type", "head_type", "face_color", "ear_eyebrow_combinations", "chin_eyebrow_combinations", "face_lines", "facial_hair"]
         
-    }
-    def get_prompt(self, face_part, face_part_description):
+                }
+    def get_prompt(self, face_part:str):
+        if face_part not in self.features_map:
+            raise ValueError(f"Unknown face part: {part_name}")
+        
+        features = self.features_map[part_name]
+        feature_list = "\n".join([f"- {feature}" for feature in features])
+
+        return f""" 
+        You are a facial morphology analyzer.
+        Analyze ONLY the {face_part} visible in the image.
+        Describe the following features: {feature_list}
+        Rules:
+        1. Use ONLY visual observations.
+        2. Do NOT infer personality.
+        3. Do NOT infer emotions.
+        4. Do NOT infer character traits.
+        5. If a feature cannot be determined, return null.
+        6. Return VALID JSON ONLY.
+        Output format:{{"feature_name": {{"value": "...", "confidence": 0.0, "description": "..."}}}}
+        The JSON keys MUST exactly match the feature names listed above.
         """
-        Where face_part is string 
-        face_part_description is list of string 
-        """
-        return f"You are a facial morphology analyzer, Analyze ONLY the {face_part}. Descripe the following features if it were avaliable {face_part_description}. Use only visual observations. 
-        Do not infer personality. Return valid JSON only."
 
     def describe_part(self, part_name, part_img, features):
         prompt = self.get_prompt(part_name, features)
         #part_img for vll 
-        
-    def describe_nose(self, image_path):
-        features = ["nose_size_shape", "nose_ridge", "nose_width", "nose_tip_angle", "nose_tip_size_shape", "nostrils_size_shape"]
-        prompt = self.get_prompt("nose", features)
-        
-    def describe_eyes(self, image_path):
-        features = ["eyes_spacing", "eyes_angle", "eyes_depth", "eye_puffs", "eyelashes", "eye_color", "eyes_corner_indents_and_eyes_iris_size", "eyelids_top", "eyelids_bottom"]
-        prompt = self.get_prompt("mouth", features)
-
-    def describe_eyebrows(self, image_path):
-        features = ["eyebrows_basic_shapes", "eyebrows_position", "eyebrows_color"]
-        prompt = self.get_prompt("eyebrows", features)
-
-    def describe_forehead(self, image_path):
-        features = ["forehead_shapes", "forehead_lines"]
-        prompt = self.get_prompt("forehead", features)
-
-    def describe_mouth(self, image_path):
-        features = ["mouth_size", "mouth_angle", "lips_size", "teeth", "smiles"]
-        prompt = self.get_prompt("mouth", features)
-
-    def describe_ears(self, image_path):
-        features = ["ears_size", "ears_cups_ridges", "ears_placement", "ears_height"]
-        prompt = self.get_prompt("ears", features)
-
-    def describe_jaw_chin(self, image_path):
-        features = ["cheeks", "jaws", "chins", "dimples", "clefts"]
-        prompt = self.get_prompt("jaw_chin", features)
-
-    def describe_whole_face(self, image_path):
-        features = ["face_shape", "face_type", "head_type", "face_color", "ear_eyebrow_combinations", "chin_eyebrow_combinations", "face_lines", "facial_hair"]
-        prompt = self.get_prompt("face", features)

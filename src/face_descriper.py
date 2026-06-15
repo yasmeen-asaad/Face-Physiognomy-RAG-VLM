@@ -13,7 +13,7 @@ class FaceDescriptor:
                 }
     def get_prompt(self, face_part:str):
         if face_part not in self.features_map:
-            raise ValueError(f"Unknown face part: {part_name}")
+            raise ValueError(f"Unknown face part: {face_part}")
         
         features = self.features_map[part_name]
         feature_list = "\n".join([f"- {feature}" for feature in features])

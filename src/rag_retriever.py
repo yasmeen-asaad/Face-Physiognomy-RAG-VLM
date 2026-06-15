@@ -23,7 +23,7 @@ class PhysiognomyRetriever:
 
         print(f"Loaded {len(self.chunks)} chunks")
 
-    def search(self, query: str,top_k: int = 5):
+    def search(self, query: str, top_k: int = 5,  region: str = None):
         """
         Semantic search over the book.
         """

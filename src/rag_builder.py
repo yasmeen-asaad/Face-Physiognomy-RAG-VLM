@@ -504,10 +504,9 @@ class RAGBuilder:
 
         print(f"      Total chunks: {len(chunks)}")
         print(f"\n      Region distribution:")
-        for region, count in sorted(self.stats.region_dist.items(),
-                                    key=lambda x: -x[1]):
+        for region, count in sorted(self.stats.region_dist.items(),key=lambda x: -x[1]):
             bar = "█" * (count // 2)
-            print(f"        {region:<20} {count:>4}  {bar}")
+            print(f" {region:<20} {count:>4}  {bar}")
 
         self.chunks = chunks
         return chunks
@@ -544,17 +543,18 @@ class RAGBuilder:
         print(f"\n[3/4] Embedding {len(chunks)} chunks")
         print(f"      Model: {self.embed_model_name}")
 
-        model      = SentenceTransformer(self.embed_model_name)
-        texts      = [c.content for c in chunks]
+        model = SentenceTransformer(self.embed_model_name)
+         # Embed the main region and the sub sregion "chabter" to the chunk in order to make the retriveral easy to detect the area 
+        texts      = texts = [f""" Region: {c.region} Chapter: {c.chapter} {c.content}"""for c in chunks]
         embeddings = model.encode(
-            texts,
-            show_progress_bar = True,
-            batch_size        = 32,
-            convert_to_numpy  = True,
-        ).astype("float32")
+                                  texts,
+                                  show_progress_bar = True,
+                                  batch_size = 32,
+                                  convert_to_numpy  = True,
+                                  ).astype("float32")
 
         self.stats.embedding_dim = embeddings.shape[1]
-        print(f"      Shape: {embeddings.shape}  (chunks × vector_dim)")
+        print(f" Shape: {embeddings.shape}  (chunks × vector_dim)")
 
         self.embeddings = embeddings
         return embeddings
@@ -598,24 +598,24 @@ class RAGBuilder:
         dim   = embeddings.shape[1]
         index = faiss.IndexFlatL2(dim)
         index.add(embeddings)
-        print(f"      Vectors: {index.ntotal}, dim={dim}")
+        print(f" Vectors: {index.ntotal}, dim={dim}")
 
         # Save FAISS index
         faiss_path = os.path.join(self.output_dir, "index.faiss")
         faiss.write_index(index, faiss_path)
-        print(f"      Saved : {faiss_path}")
+        print(f" Saved : {faiss_path}")
 
         # Save chunks
         chunks_path = os.path.join(self.output_dir, "chunks.pkl")
         with open(chunks_path, "wb") as f:
             pickle.dump(self.chunks, f)
-        print(f"      Saved : {chunks_path}")
+        print(f" Saved : {chunks_path}")
 
         # Save build info
         info_path = os.path.join(self.output_dir, "build_info.json")
         with open(info_path, "w") as f:
             json.dump(asdict(self.stats), f, indent=2)
-        print(f"      Saved : {info_path}")
+        print(f" Saved : {info_path}")
 
         print(f"\n✓ RAG index ready in '{self.output_dir}/'")
         print(f"  Next step: upload this folder as a Kaggle Dataset")

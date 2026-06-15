@@ -1,4 +1,7 @@
 class FaceDescriptor:
+    prompt = f"You are a facial morphology analyzer, Analyze ONLY the {face_part}. Return valid JSON. Descripe the following {face_part_description}
+
+Describe:"
 
     def describe_nose(self, image_path):
         pass

@@ -34,5 +34,5 @@ class FaceDescriptor:
         """
 
     def describe_part(self, part_name, part_img, features):
-        prompt = self.get_prompt(part_name, features)
+        prompt = self.get_prompt(part_name)
         #part_img for vll 

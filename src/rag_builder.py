@@ -381,7 +381,7 @@ class RAGBuilder:
         # PDF page index is 0-based, book page numbers are 1-based.
         # We assume book page N = PDF page index N-1.
         # Adjust pdf_page_offset if your PDF has extra pages at the start.
-        pdf_page_offset = 0   # change if book page 11 ≠ PDF index 10
+        pdf_page_offset = 14   # change if book page 11 ≠ PDF index 10
 
         for book_page in range(self.start_page, self.end_page + 1):
             pdf_idx = book_page - 1 + pdf_page_offset

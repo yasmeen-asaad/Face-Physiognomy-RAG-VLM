@@ -81,38 +81,40 @@ import numpy as np
 
 CHAPTER_MAPPING: Dict[str, Dict] = {
     "forehead": {
-        "pages": (11, 12),
+        "pages": (11, 12, 61, 62),
         "chapters": {
             11: "forehead_shapes",
             12: "forehead_shapes",
+            61: "lines",
+            62: "lines",
         }
     },
     "eyebrows": {
-        "pages": (13, 16),
+        "pages": (13, 14,15,16),
         "chapters": {
             13: "eyebrows_basic_shapes",
-            14: "eyebrows_basic_shapes",
-            15: "eyebrows_position",
+            14: "eyebrows_position",
+            15: "eyebrows_specific_types",
             16: "eyebrows_specific_types",
         }
     },
     "eyes": {
-        "pages": (17, 26),
+        "pages": (17, 18,19,20,21,22,23,24,25,26),
         "chapters": {
             17: "eyes_spacing",
             18: "eyes_angle",
             19: "eyes_depth",
-            20: "eyes_iris_size",
-            21: "eyes_corner_indents",
-            22: "eyes_pupil_response",
-            23: "eyes_stress_signs",
-            24: "eyelids_top",
-            25: "eyelids_bottom",
-            26: "eyelashes_and_eye_puffs",
+            20: "eyes_corner_indents_and_eyes_iris_size",   
+            21: "eyes_pupil_response",
+            22: "eyes_stress_signs",
+            23: "eyelids_top",
+            24: "eyelids_bottom",
+            25: "eyelashes",
+            26: "eye_puffs",
         }
     },
     "nose": {
-        "pages": (27, 35),
+        "pages": (27, 28,29,30,31,32,33,34,35),
         "chapters": {
             27: "nose_size_shape",
             28: "nose_size_shape",
@@ -126,86 +128,56 @@ CHAPTER_MAPPING: Dict[str, Dict] = {
         }
     },
     "ears": {
-        "pages": (36, 41),
+        "pages": (36, 37,38,39,40,41),
         "chapters": {
             36: "ears_size",
             37: "ears_cups_ridges",
             38: "ears_placement",
             39: "ears_placement",
             40: "ears_height",
-            41: "ear_eyebrow_combinations",
-        }
-    },
-    "cheeks": {
-        "pages": (42, 43),
-        "chapters": {
-            42: "cheeks",
-            43: "cheeks",
+            #41: "ear_eyebrow_combinations",
         }
     },
     "mouth": {
-        "pages": (44, 45),
+        "pages": (44, 45,46,47,48,49),
         "chapters": {
             44: "mouth_size",
             45: "mouth_angle",
-        }
-    },
-    "lips": {
-        "pages": (46, 47),
-        "chapters": {
             46: "lips_size_shape",
             47: "lips_size_shape",
-        }
-    },
-    "teeth": {
-        "pages": (48, 48),
-        "chapters": {
             48: "teeth",
-        }
-    },
-    "smiles": {
-        "pages": (49, 49),
-        "chapters": {
             49: "smiles",
         }
     },
-    "jaw": {
-        "pages": (50, 50),
+
+    "jaw_chin": {
+        "pages": (42, 43, 50, 51, 52, 53, 54, 59, 60),
         "chapters": {
-            50: "jaws",
+          42: "cheeks",
+          43: "cheeks",
+          50: "jaws",
+          51: "chins",
+          52: "chins",
+          53: "chins",
+          54: "chins",
+          59: "dimples_clefts",
+          60: "dimples_clefts",
         }
     },
-    "chin": {
-        "pages": (51, 58),
+    "face_overview": {
+        "pages": (41, 55, 56, 57, 58, 63, 64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80),
         "chapters": {
-            51: "chins",
-            52: "chins",
-            53: "chins",
-            54: "chins",
+            41: "ear_eyebrow_combinations",
             55: "chin_eyebrow_combinations",
             56: "chin_eyebrow_combinations",
             57: "chin_eyebrow_combinations",
             58: "chin_eyebrow_combinations",
-        }
-    },
-    "facial_marks": {
-        "pages": (59, 68),
-        "chapters": {
-            59: "dimples_clefts",
-            60: "dimples_clefts",
-            61: "lines",
-            62: "lines",
             63: "lines",
             64: "lines",
             65: "lines",
             66: "lines",
             67: "facial_hair",
             68: "facial_hair",
-        }
-    },
-    "face_overview": {
-        "pages": (69, 80),
-        "chapters": {
             69: "face_shape",
             70: "face_shape",
             71: "face_shape",
@@ -218,6 +190,7 @@ CHAPTER_MAPPING: Dict[str, Dict] = {
             78: "profile_combinations",
             79: "head_types",
             80: "head_types",
+          
         }
     },
 }
@@ -244,13 +217,13 @@ def get_region_and_chapter(page_num: int) -> Tuple[str, str]:
         within the (start, end) range of each region.
         Returns the chapter label for that specific page.
     """
+  
     for region, data in CHAPTER_MAPPING.items():
-        start, end = data["pages"]
-        if start <= page_num <= end:
-            # Get specific chapter for this page
-            # Fall back to region name if page not explicitly mapped
+        pages = data["pages"]               # ← نفس السطر
+        if page_num in pages:              # ← indent صح
             chapter = data["chapters"].get(page_num, region)
             return region, chapter
+    return "general", "introduction"
 
     # Page is outside all mapped ranges (intro, appendix, etc.)
     return "general", "introduction"

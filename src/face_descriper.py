@@ -1,6 +1,6 @@
 class FaceDescriptor:
      def __init__(self):
-        self.features_map = = {
+        self.features_map =  {
             "nose": ["nose_size_shape", "nose_ridge", "nose_width", "nose_tip_angle", "nose_tip_size_shape", "nostrils_size_shape"],
             "eyes": ["eyes_spacing", "eyes_angle", "eyes_depth", "eye_puffs", "eyelashes", "eye_color", "eyes_corner_indents_and_eyes_iris_size", "eyelids_top", "eyelids_bottom"],
             "eyebrows": ["eyebrows_basic_shapes", "eyebrows_position", "eyebrows_color"],

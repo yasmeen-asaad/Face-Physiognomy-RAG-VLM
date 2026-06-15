@@ -16,7 +16,7 @@ class FaceDescriptor:
         #part_img for vll 
         
     def describe_nose(self, image_path):
-        features = 
+        features = ["nose_size_shape", "nose_ridge", "nose_width", "nose_tip_angle", "nose_tip_size_shape", "nostrils_size_shape"]
         prompt = self.get_prompt("nose", features)
         
     def describe_eyes(self, image_path):

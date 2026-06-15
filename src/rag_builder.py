@@ -70,7 +70,7 @@ import numpy as np
 #
 #  Structure per region:
 #    "region_name": {
-#        "pages"   : (start_page, end_page),   ← inclusive, book-numbered
+#        "pages"   : () tuble of pages 
 #        "chapters": { page_num: "chapter_name", ... }
 #    }
 #
@@ -301,7 +301,7 @@ class RAGBuilder:
         pdf_path         : str,
         output_dir       : str  = "rag_index",
         start_page       : int  = 11,    # book page 11 = first content page
-        end_page         : int  = 128,
+        end_page         : int  = 81, # only the feature chapters in the book 
         min_chunk_len    : int  = 60,    # skip paragraphs shorter than this
         embed_model_name : str  = "all-MiniLM-L6-v2",
         ocr_gpu          : bool = False, # set True if Kaggle GPU is enabled

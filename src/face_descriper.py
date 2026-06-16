@@ -58,7 +58,7 @@ class FaceDescriptor:
      
     def __init__(self, model_name="gemini-1.5-flash", need_key=True):
           # Facial part confidence
-          self.confidence_score = 0.5
+          self.min_part_confidence  = 0.5
 
           load_dotenv()
           # Load Vllm
@@ -190,7 +190,7 @@ class FaceDescriptor:
                    print(f"[{i}/{total}] {region_name} is skipped as it's not in the feature map)")
                    continue
               # Skip facial parts with low confidence score ex ears in version 1 of the app
-              if part_result.confidence_score < self.confidence_score:
+              if part_result.confidence_score < self.min_part_confidence :
                    print(f"[{i}/{total}] {region_name} is skipped as it has low confidence: {part_result.confidence_score}")
                    continue
               print(f"[{i}/{total}] Describing: {region_name}......")

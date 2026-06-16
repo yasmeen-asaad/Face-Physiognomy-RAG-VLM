@@ -57,20 +57,20 @@ class FaceDescriptor:
      """
      
     def __init__(self, api_key, model_name="gemini-1.5-flash"):
-          # Facial part confidence
-          self.min_part_confidence  = 0.5
+         # Facial part confidence
+         self.min_part_confidence  = 0.5
 
-          # Load Vllm
-          self.model_name = model_name
-          self.MAX_RETRIES = 3
-          self.RETRY_DELAY_S = 5 # seconds between retries
-          self.api_key = api_key
-          if not self.api_key:
-               raise ValueError("No API key provided")
+         # Load Vllm
+         self.model_name = model_name
+         self.MAX_RETRIES = 3
+         self.RETRY_DELAY_S = 5 # seconds between retries
+         self.api_key = api_key
+         if not self.api_key:
+              raise ValueError("No API key provided")
 
-          genai.configure(api_key=self.api_key)             
-          self.model = genai.GenerativeModel(self.model_name)
-          print(f"Model {self.model_name} is loaded successfully")
+         genai.configure(api_key=self.api_key)             
+         self.model = genai.GenerativeModel(self.model_name)
+         print(f"Model {self.model_name} is loaded successfully")
 #____________________________________________
 # Prepare Image for the model
 #____________________________________________

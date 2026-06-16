@@ -52,29 +52,28 @@ class DescriptionResult:
 
 class FaceDescriptor:
      """
-    Sends face-part crops to Gemini Flash and gets structured
-    visual descriptions back as JSON.
+     Sends face-part crops to Gemini Flash and gets structured
+     visual descriptions back as JSON.
      """
-     
-    def __init__(self, api_key, model_name="gemini-1.5-flash"):
-         # Facial part confidence
-         self.min_part_confidence  = 0.5
+     def __init__(self, api_key, model_name="gemini-1.5-flash"):
+          # Facial part confidence
+          self.min_part_confidence  = 0.5
 
-         # Load Vllm
-         self.model_name = model_name
-         self.MAX_RETRIES = 3
-         self.RETRY_DELAY_S = 5 # seconds between retries
-         self.api_key = api_key
-         if not self.api_key:
-              raise ValueError("No API key provided")
+          # Load Vllm
+          self.model_name = model_name
+          self.MAX_RETRIES = 3
+          self.RETRY_DELAY_S = 5 # seconds between retries
+          self.api_key = api_key
+          if not self.api_key:
+               raise ValueError("No API key provided")
 
-         genai.configure(api_key=self.api_key)             
-         self.model = genai.GenerativeModel(self.model_name)
-         print(f"Model {self.model_name} is loaded successfully")
+          genai.configure(api_key=self.api_key)             
+          self.model = genai.GenerativeModel(self.model_name)
+          print(f"Model {self.model_name} is loaded successfully")
 #____________________________________________
 # Prepare Image for the model
 #____________________________________________
-    def _prepare_img(self, img_bgr: np.ndarray):
+     def _prepare_img(self, img_bgr: np.ndarray):
           """
           1. Encode image to base64 string, to pass it throw HTTP API
              (base64: is a text representation of binary data)
@@ -102,31 +101,30 @@ class FaceDescriptor:
 #____________________________________________
 # Build the Prompt
 #____________________________________________
-    def _get_prompt(self, face_part:str):
-
-        features = FEATURES_MAP[face_part]
-        features_list = "\n".join([f"- {feature}" for feature in features])
-        schema_example = {f: {"value": "...", "confidence": 0.0, "description": "..."} for f in features}
-        schema_str = json.dumps(schema_example, indent=2)
-        prompt = f"""You are a facial morphology analyzer. Your task is to analyze facial features with precise visual observations.
-        Analyze ONLY the {face_part.replace('_', ' ')} visible in the image.
-        Describe the following features:{features_list} 
-        STRICT RULES:
-        1. Use ONLY what you can directly observe in the image.
-        2. Do NOT infer personality traits.
-        3. Do NOT infer emotions or mood.
-        4. Do NOT infer character or intelligence.
-        5. If a feature cannot be clearly determined, set value to null.
-        6. confidence: 0.0 (not sure) to 1.0 (very sure)
-        7. description must be under 15 words
-        8. Return VALID JSON ONLY — no markdown, no explanation, no preamble.
-        Required output format (JSON keys must exactly match feature names above):
-        {schema_str}"""
-        return prompt
+     def _get_prompt(self, face_part:str):
+          features = FEATURES_MAP[face_part]
+          features_list = "\n".join([f"- {feature}" for feature in features])
+          schema_example = {f: {"value": "...", "confidence": 0.0, "description": "..."} for f in features}
+          schema_str = json.dumps(schema_example, indent=2)
+          prompt = f"""You are a facial morphology analyzer. Your task is to analyze facial features with precise visual observations.
+          Analyze ONLY the {face_part.replace('_', ' ')} visible in the image.
+          Describe the following features:{features_list} 
+          STRICT RULES:
+          1. Use ONLY what you can directly observe in the image.
+          2. Do NOT infer personality traits.
+          3. Do NOT infer emotions or mood.
+          4. Do NOT infer character or intelligence.
+          5. If a feature cannot be clearly determined, set value to null.
+          6. confidence: 0.0 (not sure) to 1.0 (very sure)
+          7. description must be under 15 words
+          8. Return VALID JSON ONLY — no markdown, no explanation, no preamble.
+          Required output format (JSON keys must exactly match feature names above):
+          {schema_str}"""
+          return prompt
 #____________________________________________
 # Main Method
 #____________________________________________
-    def describe_part(self, part_name:str, part_img : np.ndarray):
+     def describe_part(self, part_name:str, part_img : np.ndarray):
          """ 
          Send one face-part image to Gemini and get JSON description.
          Returns: DescriptionResult with .features_json if successful
@@ -172,7 +170,7 @@ class FaceDescriptor:
 #____________________________________________
 # Describe All Parts
 #____________________________________________
-    def describe_all_parts(self, all_parts, delay_between_calls = 2, ):
+     def describe_all_parts(self, all_parts, delay_between_calls = 2, ):
          """
          all_parts: AllPartsResult from FacePartExtractor
          delay_between_calls: delay in seconds 
@@ -205,7 +203,7 @@ class FaceDescriptor:
 #____________________________________________
 # JSON Parser Function 
 #____________________________________________ 
-    def _parse_json(self, raw_text: str):
+     def _parse_json(self, raw_text: str):
          """
          Parsing model's response to JSON,
          MAke sure the output is a valid JSon 

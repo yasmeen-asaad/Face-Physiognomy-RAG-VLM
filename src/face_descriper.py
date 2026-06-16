@@ -3,17 +3,20 @@ import re
 import json
 import base64
 import time
-from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
+from dataclasses import dataclass
+from typing import Dict, Any
 
 import cv2
 import numpy as np
+from dotenv import load_dotenv
+import google.generativeai as genai
+
 # =========*==================*===============*=============*======
 # Feature Map, What to describe per region
 # =========*==================*===============*=============*======
 FEATURES_MAP =  {
      "nose": ["size", "shape", "ridge", "width", "tip_angle", "nose_tip_size_shape", "nostrils_size_shape"],
-     "eyes": ["spacing", "angle", "depth", "eye_puffs_presence", "eye_puffs_severity", "eyelashes_presence", ""eyelashes_density"", "eye_color", "iris_size", "corner_indents", "eyelid_top", "eyelid_bottom"],
+     "eyes": ["spacing", "angle", "depth", "eye_puffs_presence", "eye_puffs_severity", "eyelashes_presence", "eyelashes_density", "eye_color", "iris_size", "corner_indents", "eyelid_top", "eyelid_bottom"],
      "eyebrows": ["shape", "position", "thickness", "color", "type"],
      "forehead": ["shape", "height", "width", "lines"],
      "mouth": ["size", "angle", "lips_size", "teeth", "smile_type"],
@@ -25,7 +28,7 @@ FEATURES_MAP =  {
 # =========*==================*===============*=============*======
 # How result should look like -Result Data Class -
 # =========*==================*===============*=============*======
-#dataclass
+@dataclass
 class DescriptionResult:
      """
      The output of each one face region should look like the following:
@@ -46,9 +49,6 @@ class DescriptionResult:
 # =========*==================*===============*=============*======
 #  Face Describer Class
 # =========*==================*===============*=============*======
-import google.generativeai as genai
-from dotenv import load_dotenv
-import os
 
 class FaceDescriptor:
      """
@@ -56,25 +56,27 @@ class FaceDescriptor:
     visual descriptions back as JSON.
      """
      
-     def __init__(self, model_name="gemini-1.5-flash", need_key=True):
+    def __init__(self, model_name="gemini-1.5-flash", need_key=True):
           # Facial part confidence
           self.confidence_score = 0.5
+
+          load_dotenv()
           # Load Vllm
           self.model_name = model_name
-          self.max_retries = 3
-          self.retry_delays = 5 # seconds between retries
+          self.MAX_RETRIES = 3
+          self.RETRY_DELAY_S = 5 # seconds between retries
           if need_key:
                api_key = os.getenv("GOOGLE_API_KEY")
                if not api_key:
                     raise ValueError("No model API key found.")
                genai.configure(api_key=api_key)
-               self.model = genai.GenerativeModel(self.MODEL)
+               self.model = genai.GenerativeModel(self.model_name)
                self.genai = genai
-          print(f"Model {model_name} is loaded successfully")
+          print(f"Model {self.model_name} is loaded successfully")
 #____________________________________________
 # Prepare Image for the model
 #____________________________________________
-     def _prepare_img(self, img_bgr: np.ndarray):
+    def _prepare_img(self, img_bgr: np.ndarray):
           """
           1. Encode image to base64 string, to pass it throw HTTP API
              (base64: is a text representation of binary data)
@@ -102,28 +104,27 @@ class FaceDescriptor:
 #____________________________________________
 # Build the Prompt
 #____________________________________________
-    def get_prompt(self, face_part:str):
+    def _get_prompt(self, face_part:str):
 
-        features = self.features_map[part_name]
-        feature_list = "\n".join([f"- {feature}" for feature in features])
+        features = FEATURES_MAP[face_part]
+        features_list = "\n".join([f"- {feature}" for feature in features])
         schema_example = {f: {"value": "...", "confidence": 0.0, "description": "..."} for f in features}
         schema_str = json.dumps(schema_example, indent=2)
         prompt = f"""You are a facial morphology analyzer. Your task is to analyze facial features with precise visual observations.
-Analyze ONLY the {region.replace('_', ' ')} visible in the image.
-Describe the following features:{features_list} 
-STRICT RULES:
-1. Use ONLY what you can directly observe in the image.
-2. Do NOT infer personality traits.
-3. Do NOT infer emotions or mood.
-4. Do NOT infer character or intelligence.
-5. If a feature cannot be clearly determined, set value to null.
-6. confidence: 0.0 (not sure) to 1.0 (very sure)
-7. description: one short sentence describing what you see visually.
-8. Return VALID JSON ONLY — no markdown, no explanation, no preamble.
-
-Required output format (JSON keys must exactly match feature names above):
-{schema_str}"""
-    return prompt
+        Analyze ONLY the {face_part.replace('_', ' ')} visible in the image.
+        Describe the following features:{features_list} 
+        STRICT RULES:
+        1. Use ONLY what you can directly observe in the image.
+        2. Do NOT infer personality traits.
+        3. Do NOT infer emotions or mood.
+        4. Do NOT infer character or intelligence.
+        5. If a feature cannot be clearly determined, set value to null.
+        6. confidence: 0.0 (not sure) to 1.0 (very sure)
+        7. description: one short sentence describing what you see visually.
+        8. Return VALID JSON ONLY — no markdown, no explanation, no preamble.
+        Required output format (JSON keys must exactly match feature names above):
+        {schema_str}"""
+        return prompt
 #____________________________________________
 # Main Method
 #____________________________________________
@@ -136,8 +137,8 @@ Required output format (JSON keys must exactly match feature names above):
               return DescriptionResult(region  = part_name, success = False,
                                        error = f"Unknown region: '{part_name}'")
          try:
-              image_data = self._prepare_image(part_img)
-              prompt = self._build_prompt(part_name)
+              image_data = self._prepare_img(part_img)
+              prompt = self._get_prompt(part_name)
          except Exception as e:
               return DescriptionResult(region=part_name, success=False,
                                        error=f"Image preparation failed: {e}")
@@ -155,18 +156,17 @@ Required output format (JSON keys must exactly match feature names above):
                              prompt])
                    response_text = response.text
                    tokens_used = response.usage_metadata.total_token_count if hasattr(response, 'usage_metadata') else 0
-                   features_json = self._parse_json(raw_text)
+                   features_json = self._parse_json(response_text )
                    return DescriptionResult(region = part_name,
                                             features_json = features_json,
-                                            raw_response = raw_text,
+                                            raw_response = response_text,
                                             success = True,
                                             tokens_used = tokens_used)
               except Exception as e:
                    last_error = str(e)
                    if attempt < self.MAX_RETRIES - 1:
-                    print(f" Attempt {attempt+1} failed: {e}. "
-                          f"Retrying in {self.RETRY_DELAY_S}s...")
-                          time.sleep(self.RETRY_DELAY_S)
+                    print(f" Attempt {attempt+1} failed: {e}. "f"Retrying in {self.RETRY_DELAY_S}s...")
+                    time.sleep(self.RETRY_DELAY_S)
 
          return DescriptionResult(region = part_name, success = False,
                                   error = f"All {self.MAX_RETRIES} attempts failed: {last_error}")
@@ -189,7 +189,7 @@ Required output format (JSON keys must exactly match feature names above):
               if region_name not in FEATURES_MAP:
                    print(f"[{i}/{total}] {region_name} is skipped as it's not in the feature map)")
                    continue
-               # Skip facial parts with low confidence score ex ears in version 1 of the app
+              # Skip facial parts with low confidence score ex ears in version 1 of the app
               if part_result.confidence_score < self.confidence_score:
                    print(f"[{i}/{total}] {region_name} is skipped as it has low confidence: {part_result.confidence_score}")
                    continue
@@ -235,7 +235,7 @@ Required output format (JSON keys must exactly match feature names above):
          if match:
               try:
                    return json.loads(match.group())
-               except json.JSONDecodeError:
+              except json.JSONDecodeError:
                     pass
          # 4. ugh! raise error
          raise ValueError(f"Could not parse JSON from response:\n{raw_text[:300]}")

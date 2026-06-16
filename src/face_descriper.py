@@ -120,7 +120,7 @@ class FaceDescriptor:
         4. Do NOT infer character or intelligence.
         5. If a feature cannot be clearly determined, set value to null.
         6. confidence: 0.0 (not sure) to 1.0 (very sure)
-        7. description: one short sentence describing what you see visually.
+        7. description must be under 15 words
         8. Return VALID JSON ONLY — no markdown, no explanation, no preamble.
         Required output format (JSON keys must exactly match feature names above):
         {schema_str}"""

@@ -170,7 +170,7 @@ class FaceDescriptor:
 #____________________________________________
 # Describe All Parts
 #____________________________________________
-     def describe_all_parts(self, all_parts, delay_between_calls = 2, ):
+     def describe_all_parts(self, all_parts, delay_between_calls = 20):
          """
          all_parts: AllPartsResult from FacePartExtractor
          delay_between_calls: delay in seconds 

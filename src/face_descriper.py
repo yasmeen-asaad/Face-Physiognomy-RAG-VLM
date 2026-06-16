@@ -22,7 +22,7 @@ FEATURES_MAP =  {
      "mouth": ["size", "angle", "lips_size", "teeth", "smile_type"],
      "jaw_chin": ["jaw_shape", "jaw_width", "chin_shape", "chin_projection", "chin_size", "cheek_fullness", "dimples", "clefts"],
      "ears": ["size", "cups_ridges", "placement", "height"],
-     "face_overview": ["face_shape", "face_type", "head_type", "face_color", "overall_skin_tone", "ear_eyebrow_combinations", "chin_eyebrow_combinations", "profile_type", "face_lines", "facial_hair"]
+     "whole_face": ["face_shape", "face_type", "head_type", "face_color", "overall_skin_tone", "ear_eyebrow_combinations", "chin_eyebrow_combinations", "profile_type", "face_lines", "facial_hair"]
         
               }
 # =========*==================*===============*=============*======

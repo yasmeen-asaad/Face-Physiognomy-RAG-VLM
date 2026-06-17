@@ -15,14 +15,14 @@ import google.generativeai as genai
 # Feature Map, What to describe per region
 # =========*==================*===============*=============*======
 FEATURES_MAP =  {
-     "nose": ["size", "shape", "ridge", "width", "tip_angle", "nose_tip_size_shape", "nostrils_size_shape"],
-     "eyes": ["spacing", "angle", "depth", "eye_puffs_presence", "eye_puffs_severity", "eyelashes_presence", "eyelashes_density", "eye_color", "iris_size", "corner_indents", "eyelid_top", "eyelid_bottom"],
-     "eyebrows": ["shape", "position", "thickness", "color", "type"],
-     "forehead": ["shape", "height", "width", "lines"],
-     "mouth": ["size", "angle", "lips_size", "teeth", "smile_type"],
+     "nose": ["nose_size_shape", "nose_ridge", "nose_width", "nose_tip_angle", "nose_tip_size_shape", "nostrils_size_shape"],
+     "eyes": ["eyes_spacing", "eyes_angle", "eyes_depth", "eye_puffs", "eyelashes", "eyelids_bottom", "eyelids_top", "eye_color", "eyes_iris_size", "eyes_corner_indents"],
+     "eyebrows": ["eyebrows_shape", "eyebrows_position", "eyebrows_thickness", "eyebrows_color", "eyebrows_type"],
+     "forehead": ["forehead_shapes", "forehead_height", "forehead_width", "forehead_lines"],
+     "mouth": ["mouth_size", "mouth_angle", "lips_size_shape", "teeth", "smile_type"],
      "jaw_chin": ["jaw_shape", "jaw_width", "chin_shape", "chin_projection", "chin_size", "cheek_fullness", "dimples", "clefts"],
-     "ears": ["size", "cups_ridges", "placement", "height"],
-     "whole_face": ["face_shape", "face_type", "head_type", "face_color", "overall_skin_tone", "ear_eyebrow_combinations", "chin_eyebrow_combinations", "profile_type", "face_lines", "facial_hair"]
+     "ears": ["ears_size", "ears_cups_ridges", "ears_placement", "ears_height"],
+     "whole_face": ["face_shape", "face_type", "head_type", "overall_skin_tone", "ear_eyebrow_combinations", "chin_eyebrow_combinations", "profile_type", "face_lines", "facial_hair"]
         
               }
 # =========*==================*===============*=============*======

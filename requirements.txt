@@ -1,6 +1,24 @@
 # Face Physiognomy Project — Python Dependencies
 # Install with:  pip install -r requirements.txt
 
-mediapipe>=0.10.0
+
+# Computer Vision
 opencv-python>=4.8.0
+mediapipe>=0.10.0
+Pillow>=10.0.0
+
+# Numerical Computing
 numpy>=1.24.0
+pandas>=2.0.0
+
+# OCR
+easyocr>=1.7.0
+PyMuPDF>=1.23.0
+
+# Embeddings & RAG
+sentence-transformers>=2.7.0
+faiss-cpu>=1.8.0
+
+# Gemini Vision
+google-generativeai>=0.8.0
+

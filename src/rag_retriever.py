@@ -7,7 +7,6 @@ from sentence_transformers import SentenceTransformer
 
 
 class PhysiognomyRetriever:
-
     def __init__(self, index_path: str, chunks_path: str, model_name: str = "all-MiniLM-L6-v2"):
         """
         Load:

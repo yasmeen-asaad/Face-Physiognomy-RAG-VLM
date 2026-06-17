@@ -29,7 +29,7 @@ class PhysiognomyRetriever:
         to matchy matchy with book language 
         output: string query in natural language
         """
-         if not features_json:
+        if not features_json:
              return region.replace("_", " ")
              
          # 1. Extract only high-confidence features
@@ -54,7 +54,7 @@ class PhysiognomyRetriever:
             
         # 2. Build a descriptive sentence
         region_clean = region.replace("_", " ") #3. Prepend the region name for context
-         if len(parts) == 1:
+        if len(parts) == 1:
              return f"{parts[0]} {region_clean}"
         elif len(parts) == 2:
              return f"{parts[0]} {region_clean} with {parts[1]}"

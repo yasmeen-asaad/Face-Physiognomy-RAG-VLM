@@ -143,7 +143,7 @@ class ReportGenerator:
             print(report.report_text)
     """
 
-    MODEL = "gemini-1.5-flash"
+    
 
     # Base prompt — tells the LLM its role and rules
     # This is the prompt you designed — clean and focused.
@@ -167,11 +167,12 @@ EVIDENCE:
 
 Write the physiognomy report now:"""
 
-    def __init__(self, api_key: str = None):
+    def __init__(self, api_key: str = None, model_name="gemini-1.5-flash"):
         """
         Initialize Gemini client.
         Reads GEMINI_API_KEY from Kaggle secrets if not provided.
         """
+        self.model_name = model_name#"gemini-1.5-flash"
         key = api_key or self._get_api_key()
         if not key:
             raise ValueError(
@@ -180,8 +181,8 @@ Write the physiognomy report now:"""
             )
 
         genai.configure(api_key=key)
-        self.model = genai.GenerativeModel(self.MODEL)
-        print(f"ReportGenerator ready — model: {self.MODEL}")
+        self.model = genai.GenerativeModel(self.model_name)
+        print(f"ReportGenerator ready — model: {self.model_name}")
 
     def _get_api_key(self) -> Optional[str]:
         import os

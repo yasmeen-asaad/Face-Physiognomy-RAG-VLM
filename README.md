@@ -59,6 +59,14 @@ Final Face Reading Report
 * Semantic search using vector embeddings
 * Structured JSON outputs
 * Evidence-based report generation
+* 
+## Data Availability
+
+The original book, extracted text chunks, and generated FAISS index are not included in this repository.
+
+The project uses a copyrighted reference book for educational and research purposes. To respect copyright and intellectual property rights, the source material, processed text chunks, embeddings, and vector database files have been excluded from this public repository.
+
+Users may build their own knowledge base from legally obtained source materials using the provided pipeline.
 
 ## Disclaimer
 
@@ -67,3 +75,5 @@ This project is intended for educational and research purposes only.
 The generated descriptions and retrieved interpretations originate from the source reference material and should not be considered scientific, psychological, medical, personality, or hiring assessments. ^^
 
 No claims are made regarding the scientific validity of physiognomy.
+
+

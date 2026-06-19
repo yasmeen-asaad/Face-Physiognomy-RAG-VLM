@@ -34,7 +34,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from face_detector import FaceDetectorValidator
 from face_part_extractor import FacePartExtractor, PaddingConfig
-from face_describer import FaceDescriptor
+from face_descriper import FaceDescriptor
 from rag_retriever import PhysiognomyRetriever
 from report_generator import ReportGenerator
 from drive_logger import DriveLogger, SessionLog, new_session_id

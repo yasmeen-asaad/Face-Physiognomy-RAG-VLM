@@ -1,3 +1,13 @@
+---
+title: Face Physiognomy
+emoji: 🔍
+colorFrom: blue
+colorTo: purple
+sdk: gradio
+sdk_version: "5.34.2"
+app_file: app.py
+pinned: false
+---
 # Physiognomy Project: Vision-Language Face Analysis with RAG
 
 A Computer Vision and Retrieval-Augmented Generation (RAG) system that extracts facial morphology features using Vision Language Models (VLMs), retrieves relevant evidence from a physiognomy knowledge base, and generates structured face-reading reports.

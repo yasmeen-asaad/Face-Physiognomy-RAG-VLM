@@ -30,7 +30,7 @@ import numpy as np
 import gradio as gr
 
 # Add src to the path 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from face_detector import FaceDetectorValidator
 from face_part_extractor import FacePartExtractor, PaddingConfig

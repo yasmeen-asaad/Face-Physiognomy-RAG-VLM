@@ -1,0 +1,6 @@
+# Required for MediaPipe Tasks API (FaceLandmarker).
+# Fixes: OSError: libGLESv2.so.2 cannot open shared object file
+
+libgl1
+libglib2.0-0
+libgles2

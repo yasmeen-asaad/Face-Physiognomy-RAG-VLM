@@ -43,6 +43,28 @@ from drive_logger import DriveLogger, SessionLog, new_session_id
 # Note: loading models takes (10-30 sec) 
 # So, if the user will use the app more than one request, i want all models to load once, not per each user request!!
 
+
+from huggingface_hub import hf_hub_download, login
+HF_TOKEN = os.environ.get("HF_TOKEN")
+os.makedirs("RAG_INDEX_DIR", exist_ok=True)
+hf_hub_download(
+    repo_id="YasmeenAsaad/RAG_INDEX_DIR",
+    filename="index.faiss",          # Change if your filename is different
+    repo_type="dataset",
+    local_dir="RAG_INDEX_DIR",
+    token=HF_TOKEN,
+    local_dir_use_symlinks=False
+)
+
+hf_hub_download(
+    repo_id="YasmeenAsaad/RAG_INDEX_DIR",
+    filename="chunks.pkl",          # Change if your filename is different
+    repo_type="dataset",
+    local_dir="RAG_INDEX_DIR",
+    token=HF_TOKEN,
+    local_dir_use_symlinks=False
+)
+
 INDEX_DIR = os.environ.get("RAG_INDEX_DIR", "/app/rag_index")
 api_key = os.environ.get("GEMINI_API_KEY")
 model_name="gemini-flash-lite-latest"

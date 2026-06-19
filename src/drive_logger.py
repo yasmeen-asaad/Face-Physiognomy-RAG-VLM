@@ -137,7 +137,7 @@ class DriveLogger:
 		try:
 			if original_img is not None:
 				# upload the image 
-				image_file_id = self._upload_image(img=original_img,filename = f"session_{session.session_id}.jpg")
+				self._upload_image(img=original_img,filename = f"session_{session.session_id}.jpg")
 				# session.image_file_id = image_file_id 
 				# upload the json
 				self._upload_json(data=session.to_dict(),filename=f"session_{session.session_id}.json")

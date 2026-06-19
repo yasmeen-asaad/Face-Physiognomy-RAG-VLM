@@ -3,14 +3,13 @@ name: Sync to Hugging Face Space
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 jobs:
   sync-to-hub:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
@@ -19,5 +18,4 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git remote add hf https://huggingface.co/spaces/YasmeenAsaad/Face-Physiognomy-RAG-VLM
-          git push https://YasmeenAsaad:$HF_TOKEN@huggingface.co/spaces/YasmeenAsaad/Face-Physiognomy-RAG-VLM main:main --force
+          git push https://YasmeenAsaad:$HF_TOKEN@huggingface.co/spaces/YasmeenAsaad/Face-Physiognomy-RAG-VLM HEAD:main --force

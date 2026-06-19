@@ -236,11 +236,12 @@ class FaceDetectorValidator:
         # Step 6: Expression check (uses raw_landmarks + full image dimensions)
         if check_expression:
           expr = self._check_expression(raw_landmarks, full_w, full_h)
+          expression_scores = expr["scores"]
           if expr["has_expression"]:
             return self._fail(ValidationStatus.EXPRESSION_DETECTED, f"Expression detected: {expr['reason']}. "
-                              "Please use a neutral, relaxed face.", expression_scores=expr["scores"])
+                              "Please use a neutral, relaxed face.", expression_scores=expression_scores)
         else:
-          expr =0
+          expression_scores  = None
  
         # Step 7: Crop face
         face_crop = self._crop_face(image_bgr, face_bbox)
@@ -299,7 +300,7 @@ class FaceDetectorValidator:
                                     face_crop = face_crop,
                                     face_bbox = face_bbox,
                                     detection_score = 1.0,
-                                    expression_scores = expr["scores"],
+                                    expression_scores = expression_scores,
                                     annotated_image = annotated,
                                     crop_landmarks = crop_landmarks,   # ← NEW: ready for Part 2
                                     #raw_landmarks  = raw_landmarks

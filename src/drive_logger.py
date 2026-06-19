@@ -44,11 +44,11 @@ MAX_LOGGED_SESSIONS = 150
 @dataclass
 class SessionLog:
 	"""Complete record of one pipeline run, Stored as a single JSON file per session.
-	   Designed for VLM + RAG pipeline debugging:
-	     - descriptions : full VLM output per region
-	     - retrieval_results: queries, passages, scores per region
-	     - report_text : final generated report
-	     - error_msg : what went wrong (if anything) """
+	Designed for VLM + RAG pipeline debugging:
+	- descriptions : full VLM output per region
+	- retrieval_results: queries, passages, scores per region
+	- report_text : final generated report
+	- error_msg : what went wrong (if anything) """
 	
 	session_id: str
 	timestamp: str
@@ -78,12 +78,11 @@ class DriveLogger:
 	"""
 	Logs pipeline sessions to Google Drive.
 	Each session produces:
-	   1.logs/session_<id>.json --> full pipeline data for debugging
-	   2.images/session_<id>.jpg --> uploaded image for visual review
+	1.logs/session_<id>.json --> full pipeline data for debugging
+	2.images/session_<id>.jpg --> uploaded image for visual review
 	"""
 	def __init__(self):
 		"""Initialize Google Drive API client from service account credentials."""
-		
 		self.folder_id = os.environ.get("GDRIVE_FOLDER_ID")
 		sa_json = os.environ.get("GDRIVE_SERVICE_ACCOUNT")
 		if not self.folder_id or not sa_json:
@@ -111,7 +110,7 @@ class DriveLogger:
 												 f"'{self.folder_id}' in parents and "
 												 f"mimeType='application/vnd.google-apps.folder' and "
 												 f"trashed=false"),
-												 fields = "files(id)").execute().get("files", [])
+											fields = "files(id)").execute().get("files", [])
 		if results:
 			return results[0]["id"]
 		# else create it !
@@ -122,14 +121,14 @@ class DriveLogger:
 	def _count_existing_sessions(self):
 		"""Count how many session JSON files already exist in logs/."""
 		results = self.service.files().list(q=(f"'{self._logs_folder_id}' in parents and "
-										   f"mimeType='application/json' and "
-										   f"trashed=false"),
-										fields = "files(id)").execute().get("files", [])
+											   f"mimeType='application/json' and "
+											   f"trashed=false"),
+											fields = "files(id)").execute().get("files", [])
 		return len(results)
 #____________________________________________________________
 	def log_session(self, session:SessionLog, original_img : Optional[np.ndarray] = None)-> bool:
 		""" Save session JSON + uploaded image to Google Drive.
-		    Returns True if logged, False if skipped (limit reached).
+		Returns True if logged, False if skipped (limit reached).
 		"""
 		# check if we reached to the logging limit 
 		if self._session_count >= MAX_LOGGED_SESSIONS: 
@@ -139,27 +138,26 @@ class DriveLogger:
 			if original_img is not None:
 				# upload the image 
 				image_file_id = self._upload_image(img=original_img,filename = f"session_{session.session_id}.jpg")
-				
-                # session.image_file_id = image_file_id 
+				# session.image_file_id = image_file_id 
 				# upload the json
-                self._upload_json(data=session.to_dict(),filename=f"session_{session.session_id}.json")
-                self._session_count += 1
-                print(f"Session {session.session_id} logged "f"({self._session_count}/{MAX_LOGGED_SESSIONS})")
-                return True
+				self._upload_json(data=session.to_dict(),filename=f"session_{session.session_id}.json")
+				self._session_count += 1
+				print(f"Session {session.session_id} logged "f"({self._session_count}/{MAX_LOGGED_SESSIONS})")
+				return True
 		except Exception as e:
 			print(f"Drive logging failed for {session.session_id}: {e}")
 			return False
 #____________________________________________________________
 	def _upload_image(self, img:np.ndarray, filename:str):
 		""" Upload user photo to Drive. 
-		    Return the Drive file ID (stored in session JSON for traceability)
+		Return the Drive file ID (stored in session JSON for traceability)
 		"""
 		from googleapiclient.http import MediaIoBaseUpload
 		# Convert image from numpy to jpg (compress)
 		success, buffer = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 90])
 		if not success:
 			raise ValueError(f"Failed to encode image: {filename}")
-			
+		
 		img_bytes = io.BytesIO(buffer.tobytes()) # Create in-memory file object
 		metadata  = {"name": filename, "parents": [self._images_folder_id]}
 		media = MediaIoBaseUpload(img_bytes, mimetype="image/jpeg")	

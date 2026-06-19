@@ -69,7 +69,18 @@ Final Face Reading Report
 * Semantic search using vector embeddings
 * Structured JSON outputs
 * Evidence-based report generation
-* 
+
+## Note
+### System Dependencies
+
+The project uses MediaPipe FaceLandmarker Tasks API, which requires
+additional Linux libraries when deployed on Hugging Face Spaces:
+
+- libgl1
+- libglib2.0-0
+- libgles2
+
+These dependencies are installed through `packages.txt`.
 ## Data Availability
 
 The original book, extracted text chunks, and generated FAISS index are not included in this repository.

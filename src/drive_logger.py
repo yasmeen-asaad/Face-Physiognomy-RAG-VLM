@@ -41,26 +41,25 @@ MAX_LOGGED_SESSIONS = 150
 #__________________________________________________________
 @dataclass
 class SessionLog:
-	"""
-	Complete record of one pipeline run, Stored as a single JSON file per session.
-	Designed for VLM + RAG pipeline debugging:
-      - descriptions    : full VLM output per region
-      - retrieval_results: queries, passages, scores per region
-      - report_text     : final generated report
-      - error_msg       : what went wrong (if anything)
-	"""
-    session_id: str
-    timestamp: str
-    status: str # success/ invalid_face/error/ ay moshkela
-    latency_sec: float = 0.0
-    #__ optional data 
-    #image_file_id : Optional[str] = None  # Drive file ID of uploaded image
-    descriptions : Optional[Dict] = None  # VLM output per region
-    retrieval_results : Optional[Dict] = None  # RAG results per region
-    report_text : Optional[str] = None  # final report
-    error_msg : Optional[str] = None  # error details if failed
-    pipeline_stats : Dict[str, Any] = field(default_factory=dict)
-    def to_dict(self) -> Dict:
+	"""Complete record of one pipeline run, Stored as a single JSON file per session.
+	   Designed for VLM + RAG pipeline debugging:
+	     - descriptions : full VLM output per region
+	     - retrieval_results: queries, passages, scores per region
+	     - report_text : final generated report
+	     - error_msg : what went wrong (if anything) """
+	
+	session_id: str
+	timestamp: str
+	status: str   # success/ invalid_face/error/ ay moshkela
+	latency_sec: float = 0.0
+	#__ optional data 
+	#image_file_id : Optional[str] = None  # Drive file ID of uploaded image
+	descriptions : Optional[Dict] = None  # VLM output per region
+	retrieval_results : Optional[Dict] = None  # RAG results per region
+	report_text : Optional[str] = None  # final report
+	error_msg : Optional[str] = None  # error details if failed
+	pipeline_stats : Dict[str, Any] = field(default_factory=dict)
+	def to_dict(self) -> Dict:
 		return asdict(self)
 
 #____________________________________________

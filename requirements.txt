@@ -23,7 +23,7 @@ google-generativeai
 google-api-python-client
 google-auth
 
-
+huggingface-hub
 gradio
 
  

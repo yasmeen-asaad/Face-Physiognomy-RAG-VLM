@@ -65,7 +65,7 @@ hf_hub_download(
     local_dir_use_symlinks=False
 )
 
-INDEX_DIR = os.environ.get("RAG_INDEX_DIR", "/app/rag_index")
+INDEX_DIR = os.path.join(os.path.dirname(__file__), "RAG_INDEX_DIR")
 api_key = os.environ.get("GEMINI_API_KEY")
 model_name="gemini-flash-lite-latest"
 detector  = FaceDetectorValidator()

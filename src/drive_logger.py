@@ -109,7 +109,7 @@ class DriveLogger:
 												 f"'{self.folder_id}' in parents and "
 												 f"mimeType='application/vnd.google-apps.folder' and "
 												 f"trashed=false"),
-											fields = "files(id)").execute().get("files", [])
+												 fields = "files(id)").execute().get("files", [])
         if results:
 			return results[0]["id"]
         # else create it !

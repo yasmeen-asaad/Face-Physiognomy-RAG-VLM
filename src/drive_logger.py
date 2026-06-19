@@ -79,8 +79,7 @@ class DriveLogger:
 	   1.logs/session_<id>.json --> full pipeline data for debugging
 	   2.images/session_<id>.jpg --> uploaded image for visual review
 	"""
-#____________________________________________________________    
-    def __init__(self):
+	def __init__(self):
 		"""Initialize Google Drive API client from service account credentials."""
 		
 		self.folder_id = os.environ.get("GDRIVE_FOLDER_ID")
@@ -93,7 +92,7 @@ class DriveLogger:
 		self._session_count = self._count_existing_sessions()
 		print(f"DriveLogger ready — {self._session_count} sessions logged so far")
 #____________________________________________________________    
-    def _build_service(self, sa_json_str): 
+	def _build_service(self, sa_json_str): 
 		""" Build Google Drive API client from service from service account JSON string. 
 		sa_json_str: secret json in string format contains google account info
 		"""
@@ -102,23 +101,23 @@ class DriveLogger:
 		credentials = service_account.Credentials.from_service_account_info(sa_info, scopes=["https://www.googleapis.com/auth/drive"])
 		return build("drive", "v3", credentials=credentials) # build clint with that crediential     
 #____________________________________________________________    
-    def _get_or_create_folder(self, name):
+	def _get_or_create_folder(self, name):
         """ Get folder ID if it exists, create it if not.
 		    Return folder ID, due to driver api use forder ids not paths
-		"""
-		results = self.service.files().list(q = (f"name='{name}' and "
+        """
+        results = self.service.files().list(q = (f"name='{name}' and "
 												 f"'{self.folder_id}' in parents and "
 												 f"mimeType='application/vnd.google-apps.folder' and "
 												 f"trashed=false"),
 											fields = "files(id)").execute().get("files", [])
-		if results:
+        if results:
 			return results[0]["id"]
-		# else create it !
-		metadata = {"name" : name,"mimeType": "application/vnd.google-apps.folder","parents" : [self.folder_id]}
-		folder = self.service.files().create(body=metadata, fields="id").execute()
-		return folder["id"]
+        # else create it !
+        metadata = {"name" : name,"mimeType": "application/vnd.google-apps.folder","parents" : [self.folder_id]}
+        folder = self.service.files().create(body=metadata, fields="id").execute()
+        return folder["id"]
 #____________________________________________________________
-    def _count_existing_sessions(self):
+	def _count_existing_sessions(self):
 		"""Count how many session JSON files already exist in logs/."""
 		results = self.service.files().list(q=(f"'{self._logs_folder_id}' in parents and "
 										   f"mimeType='application/json' and "
@@ -126,7 +125,7 @@ class DriveLogger:
 										fields = "files(id)").execute().get("files", [])
 		return len(results)
 #____________________________________________________________
-    def log_session(self, session:SessionLog, original_img : Optional[np.ndarray] = None)-> bool:
+	def log_session(self, session:SessionLog, original_img : Optional[np.ndarray] = None)-> bool:
 		""" Save session JSON + uploaded image to Google Drive.
 		    Returns True if logged, False if skipped (limit reached).
 		"""
@@ -148,7 +147,7 @@ class DriveLogger:
 			print(f"Drive logging failed for {session.session_id}: {e}")
 			return False
 #____________________________________________________________
-    def _upload_image(self, img:np.ndarray, filename:str):
+	def _upload_image(self, img:np.ndarray, filename:str):
 		""" Upload user photo to Drive. 
 		    Return the Drive file ID (stored in session JSON for traceability)
 		"""
@@ -164,7 +163,7 @@ class DriveLogger:
 		file = self.service.files().create(body=metadata, media_body=media, fields="id").execute()
         #return file["id"]
 #____________________________________________________________
-    def _upload_json(self, data:Dict, filename:str):
+	def _upload_json(self, data:Dict, filename:str):
 		""" Serialize dict --> JSON bytes --> upload to logs/ folder."""
 		from googleapiclient.http import MediaIoBaseUpload
 		json_bytes = io.BytesIO(json.dumps(data, indent=2, default=str).encode("utf-8"))

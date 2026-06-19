@@ -52,7 +52,7 @@ class SessionLog:
     session_id: str
     timestamp: str
     status: str # success/ invalid_face/error/ ay moshkela
-    #latency_sec: float
+    latency_sec: float = 0.0
     #__ optional data 
     #image_file_id : Optional[str] = None  # Drive file ID of uploaded image
     descriptions : Optional[Dict] = None  # VLM output per region

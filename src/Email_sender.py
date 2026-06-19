@@ -1,6 +1,8 @@
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# This feature is cancelled due to simplisty 
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 """
-This class for sending the user report to his email address
-"""
+#This class for sending the user report to his email address
 import os
 import smtplib
 import ssl
@@ -73,7 +75,7 @@ class EmailSender:
     except Exception as e:
       return EmailResult(success=False, message="Email failed", error= str(e))
 
-
+"""
 
     
     

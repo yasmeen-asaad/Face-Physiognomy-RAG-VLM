@@ -214,9 +214,9 @@ def build_ui():
     """
     with gr.Blocks(title="Face Physiognomy Analyzer") as demo:
      # Header 
-      gr.Markdown("""
-      # 🔍 Face Physiognomy Analyzer
-      Analyze facial features based on the principles of physiognomy.
+     gr.Markdown("""
+     # 🔍 Face Physiognomy Analyzer
+     Analyze facial features based on the principles of physiognomy.
 
 **How it works:**
 1. Upload a clear, neutral-expression frontal face photo
@@ -226,29 +226,29 @@ def build_ui():
 **Photo requirements:** Frontal view · Neutral expression · Good lighting
         """)
 
-        # Inputs 
-        with gr.Row():
-            with gr.Column(scale=1): # left column
-                image_input = gr.Image(label = "Upload Front Face Photo",
-                                       type = "numpy", # Gradio returns RGB numpy array
-                                       height = 350)
-                image_input_profile = gr.Image(label = "Upload Profile Face Photo (optional)",
-                                               type = "numpy", # Gradio returns RGB numpy array
-                                               height = 350) 
+    # Inputs 
+    with gr.Row():
+       with gr.Column(scale=1): # left column
+          image_input = gr.Image(label = "Upload Front Face Photo",
+                                 type = "numpy", # Gradio returns RGB numpy array
+                                 height = 350)
+          image_input_profile = gr.Image(label = "Upload Profile Face Photo (optional)",
+                                         type = "numpy", # Gradio returns RGB numpy array
+                                         height = 350) 
               
-                analyze_btn = gr.Button("Analyze Face", variant = "primary",size = "lg")
+          analyze_btn = gr.Button("Analyze Face", variant = "primary",size = "lg")
 
-            # Outputs: in the right column
-            with gr.Column(scale=1):
-                status_output = gr.Textbox(label="Status", lines=3, interactive=False)
-                report_output = gr.Textbox(label="Physiognomy Report", lines=20, interactive=False)
+          # Outputs: in the right column
+          with gr.Column(scale=1):
+             status_output = gr.Textbox(label="Status", lines=3, interactive=False)
+             report_output = gr.Textbox(label="Physiognomy Report", lines=20, interactive=False)
 
-        # Footer 
-        gr.Markdown("""---*This tool is for educational and entertainment purposes only.* *Based on "Amazing Face Reading" book by Mac Fulfer.*""")
+    # Footer 
+    gr.Markdown("""---*This tool is for educational and entertainment purposes only.* *Based on "Amazing Face Reading" book by Mac Fulfer.*""")
 
-        # Link the button to the function
-        analyze_btn.click(fn=analyze_face, inputs=[image_input, image_input_profile],outputs=[status_output, report_output])
-        return demo
+    # Link the button to the function
+    analyze_btn.click(fn=analyze_face, inputs=[image_input, image_input_profile],outputs=[status_output, report_output])
+    return demo
 #_________________________________________________________________________
 #  Launch
 #_________________________________________________________________________

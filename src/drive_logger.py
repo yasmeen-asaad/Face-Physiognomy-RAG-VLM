@@ -102,20 +102,20 @@ class DriveLogger:
 		return build("drive", "v3", credentials=credentials) # build clint with that crediential     
 #____________________________________________________________    
 	def _get_or_create_folder(self, name):
-        """ Get folder ID if it exists, create it if not.
-		    Return folder ID, due to driver api use forder ids not paths
-        """
-        results = self.service.files().list(q = (f"name='{name}' and "
+		""" Get folder ID if it exists, create it if not.
+		Return folder ID, due to driver api use forder ids not paths
+		"""
+		results = self.service.files().list(q = (f"name='{name}' and "
 												 f"'{self.folder_id}' in parents and "
 												 f"mimeType='application/vnd.google-apps.folder' and "
 												 f"trashed=false"),
 												 fields = "files(id)").execute().get("files", [])
-        if results:
+		if results:
 			return results[0]["id"]
-        # else create it !
-        metadata = {"name" : name,"mimeType": "application/vnd.google-apps.folder","parents" : [self.folder_id]}
-        folder = self.service.files().create(body=metadata, fields="id").execute()
-        return folder["id"]
+		# else create it !
+		metadata = {"name" : name,"mimeType": "application/vnd.google-apps.folder","parents" : [self.folder_id]}
+		folder = self.service.files().create(body=metadata, fields="id").execute()
+		return folder["id"]
 #____________________________________________________________
 	def _count_existing_sessions(self):
 		"""Count how many session JSON files already exist in logs/."""
@@ -137,7 +137,8 @@ class DriveLogger:
 			if original_img is not None:
 				# upload the image 
 				image_file_id = self._upload_image(img=original_img,filename = f"session_{session.session_id}.jpg")
-                #session.image_file_id = image_file_id #get image name
+				
+                # session.image_file_id = image_file_id 
 				# upload the json
                 self._upload_json(data=session.to_dict(),filename=f"session_{session.session_id}.json")
                 self._session_count += 1
@@ -161,7 +162,7 @@ class DriveLogger:
 		metadata  = {"name": filename, "parents": [self._images_folder_id]}
 		media = MediaIoBaseUpload(img_bytes, mimetype="image/jpeg")	
 		file = self.service.files().create(body=metadata, media_body=media, fields="id").execute()
-        #return file["id"]
+		#return file["id"]
 #____________________________________________________________
 	def _upload_json(self, data:Dict, filename:str):
 		""" Serialize dict --> JSON bytes --> upload to logs/ folder."""

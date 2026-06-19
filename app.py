@@ -248,7 +248,7 @@ def build_ui():
 
         # Link the button to the function
         analyze_btn.click(fn=analyze_face, inputs=[image_input, image_input_profile],outputs=[status_output, report_output])
-    return demo
+        return demo
 #_________________________________________________________________________
 #  Launch
 #_________________________________________________________________________

@@ -175,7 +175,7 @@ class FaceDetectorValidator:
     #  Public API
     # ----------------------------------------------------------
 
-    def process(self, image_input) -> FaceValidationResult:
+    def process(self, image_input, check_expression=False) -> FaceValidationResult:
         """
         Run the full validation pipeline.
 
@@ -234,10 +234,13 @@ class FaceDetectorValidator:
                               f"Minimum: {self.config.MIN_FACE_SIZE_PX} px.")
 
         # Step 6: Expression check (uses raw_landmarks + full image dimensions)
-        expr = self._check_expression(raw_landmarks, full_w, full_h)
-        if expr["has_expression"]:
+        if check_expression:
+          expr = self._check_expression(raw_landmarks, full_w, full_h)
+          if expr["has_expression"]:
             return self._fail(ValidationStatus.EXPRESSION_DETECTED, f"Expression detected: {expr['reason']}. "
                               "Please use a neutral, relaxed face.", expression_scores=expr["scores"])
+        else:
+          expr =0
  
         # Step 7: Crop face
         face_crop = self._crop_face(image_bgr, face_bbox)

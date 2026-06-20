@@ -45,7 +45,7 @@ class DescriptionResult:
      success: bool = False
      error: str | None = None 
      tokens_used: int = 0
-     def to_dict(self) -> Dict[str, Optional[FaceDescriptor]]:
+     def to_dict(self):
         return {"region": self.region, 
                 "features_json" : self.features_json,
                 "raw_response" : self.raw_response,  
